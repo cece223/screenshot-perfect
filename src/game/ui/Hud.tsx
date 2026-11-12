@@ -181,7 +181,7 @@ export function Hud() {
             ) : null}
           </button>
           {layout === "mouse" && tapOn && !label && (
-            <span className="hud-glass rounded-full px-3 py-2 text-xs font-bold text-muted-foreground">Click the floor to walk · click things to use them</span>
+            <span className="hud-glass hidden whitespace-nowrap rounded-full px-3 py-2 text-xs font-bold text-muted-foreground sm:inline">Click the floor to walk · click things to use them</span>
           )}
         </div>
       )}
