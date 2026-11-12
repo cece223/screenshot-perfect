@@ -2,6 +2,7 @@ import { Sparkles } from "lucide-react";
 import { unlockAudio } from "../audio";
 import { STARTING_CASH, levelInfo } from "../sim/economy";
 import { useGame } from "../store";
+import { resetWorld } from "../world";
 import { Sheet } from "./Sheet";
 
 export function TitleScreen() {
@@ -37,6 +38,7 @@ export function TitleScreen() {
             onClick={() => {
               unlockAudio();
               if (hasSave && !window.confirm("Start over? Your current boutique will be replaced.")) return;
+              resetWorld();
               newGame();
             }}
           >

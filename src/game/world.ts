@@ -72,3 +72,10 @@ export function checkoutFront(): boolean {
   useGame.getState().recordSale(res.items);
   return true;
 }
+
+export function resetWorld() {
+  world = null;
+  const w = getWorld();
+  w.player.heading = 0; // face the shop entrance so the portrait camera sees the store behind you
+  useGame.setState({ customerIds: [], queueLength: 0, frontReady: false, prompt: null });
+}

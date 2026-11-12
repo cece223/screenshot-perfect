@@ -1,23 +1,50 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+// The whole 3D game (three.js, drei, browser storage) loads only in the browser.
+const Game = lazy(() => import("@/game/Game"));
+
 export const Route = createFileRoute("/")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Bloom Boutique — 3D Clothing Store Simulator" },
+      {
+        name: "description",
+        content:
+          "Run your own 3D clothing boutique: stock racks, check out shoppers, level up to unlock accessories and decor. Plays with keyboard, touch or controller.",
+      },
+      { property: "og:title", content: "Bloom Boutique — 3D Clothing Store Simulator" },
+      {
+        property: "og:description",
+        content: "Stock racks, ring up shoppers and grow a cozy 3D clothing boutique in your browser.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+function Loading() {
+  return (
+    <div className="flex h-dvh w-full flex-col items-center justify-center gap-3 bg-background">
+      <div className="font-display text-4xl font-bold">
+        Bloom <span className="italic text-primary">Boutique</span>
+      </div>
+      <div className="h-1.5 w-40 overflow-hidden rounded-full bg-muted">
+        <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+      </div>
+    </div>
+  );
+}
+
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <ClientOnly fallback={<Loading />}>
+      <Suspense fallback={<Loading />}>
+        <Game />
+      </Suspense>
+    </ClientOnly>
   );
 }
