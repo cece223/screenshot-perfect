@@ -122,7 +122,7 @@ export function Stepper() {
       const portrait = size.width < 768;
       const fx = Math.sin(p.heading);
       const fz = Math.cos(p.heading);
-      desired.set(p.x + fx * 3.1, 1.55, p.z + fz * 3.1);
+      desired.set(p.x + fx * 3.7, 1.6, p.z + fz * 3.7);
       // keep the avatar clear of the panel: above it on phones, left of it on desktop
       const side = portrait ? 0 : 0.95;
       lookGoal.set(p.x + fz * side, portrait ? 0.45 : 1.0, p.z - fx * side);

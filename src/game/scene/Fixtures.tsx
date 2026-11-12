@@ -98,7 +98,7 @@ export function Rack({ fixture }: { fixture: FixtureId }) {
       {items.map((id, i) => {
         const p = productById(id);
         if (!p) return null;
-        return <Garment key={i} shape={p.shape} color={shade(p.color, i)} x={start + i * spacing} />;
+        return <Garment key={`${i}-${id}`} shape={p.shape} color={shade(p.color, i)} x={start + i * spacing} />;
       })}
       <Sign text={info.label} position={[0, 1.86, 0]} w={1.5} h={0.3} bg={info.gender === "women" ? "#c9675a" : "#3f5b6e"} />
     </group>
@@ -223,7 +223,7 @@ export function DisplayCase({ fixture }: { fixture: FixtureId }) {
         if (!p) return null;
         const col = i % 5;
         const row = Math.floor(i / 5);
-        return <CaseItem key={i} shape={p.shape} color={p.color} position={[-0.8 + col * 0.4, 0.83, -0.15 + row * 0.3]} />;
+        return <CaseItem key={`${i}-${id}`} shape={p.shape} color={p.color} position={[-0.8 + col * 0.4, 0.83, -0.15 + row * 0.3]} />;
       })}
       {locked ? (
         <Sign text={`Accessories · Level ${info.unlockLevel}`} position={[0, 1.42, 0]} w={1.7} h={0.3} bg="#8c8279" />

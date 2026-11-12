@@ -212,8 +212,9 @@ export function Character({ look, sample }: { look: Appearance; sample: () => Mo
   const torsoR = look.top === "hoodie" ? 0.205 : 0.19;
   return (
     <group ref={body}>
-      <Leg look={look} side={-1} legRef={legL} />
-      <Leg look={look} side={1} legRef={legR} />
+      {/* keyed so switching styles remounts instead of morphing one mesh into another */}
+      <Leg key={`l-${look.bottom}-${look.shoes}`} look={look} side={-1} legRef={legL} />
+      <Leg key={`r-${look.bottom}-${look.shoes}`} look={look} side={1} legRef={legR} />
       {/* hips */}
       <mesh position={[0, 0.84, 0]} castShadow>
         <boxGeometry args={[0.38, 0.16, 0.24]} />
@@ -291,7 +292,7 @@ export function Character({ look, sample }: { look: Appearance; sample: () => Mo
           <torusGeometry args={[0.035, 0.01, 6, 12, Math.PI]} />
           <meshStandardMaterial color="#9c4a3c" />
         </mesh>
-        <Hair look={look} />
+        <Hair key={look.hairStyle} look={look} />
       </group>
     </group>
   );
