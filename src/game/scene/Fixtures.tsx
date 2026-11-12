@@ -252,11 +252,13 @@ export function Counter() {
           <meshStandardMaterial color="#efc7bc" roughness={0.7} />
         </mesh>
       ))}
-      <Sign text="Checkout" position={[0, 1.9, 0]} w={1.4} h={0.34} bg="#2f2a2a" />
-      <mesh position={[0, 2.5, 0]}>
-        <cylinderGeometry args={[0.008, 0.008, 0.9]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
+      <Sign text="Checkout" position={[0, 2.45, 0.1]} w={1.4} h={0.34} bg="#2f2a2a" />
+      {[-0.6, 0.6].map((x) => (
+        <mesh key={x} position={[x, 2.85, 0.1]}>
+          <cylinderGeometry args={[0.006, 0.006, 0.45]} />
+          <meshStandardMaterial color="#2f2a2a" />
+        </mesh>
+      ))}
       <Register />
       <Model url={MODELS.plantSmall} scale={2.6} position={[1.2, 1.01, 0]} />
       {/* bag stack */}
