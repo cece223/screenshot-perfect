@@ -5,10 +5,13 @@ import * as THREE from "three";
 import { unlockAudio } from "./audio";
 import { input } from "./input";
 import { FIXTURE_IDS, FIXTURES } from "./sim/catalog";
+import { actionsForKey } from "./bindings";
+import { useSettings } from "./settings";
+import { pickTap, type TapTarget } from "./sim/taps";
 import { useGame } from "./store";
-import { advanceSim, checkoutFront, getWorld } from "./world";
+import { advanceSim, checkoutFront, getWorld, handleTap } from "./world";
 import { Stepper, interact } from "./Stepper";
-import { Customers, InteractRings, Player } from "./scene/Actors";
+import { Customers, InteractRings, Player, TapMarker } from "./scene/Actors";
 import { Decor } from "./scene/Decor";
 import { Counter, DisplayCase, FittingArea, Mirror, Rack } from "./scene/Fixtures";
 import { MODELS } from "./scene/models";
@@ -18,6 +21,7 @@ import { ComputerPanel } from "./ui/ComputerPanel";
 import { CustomizePanel } from "./ui/CustomizePanel";
 import { Hud } from "./ui/Hud";
 import { HelpPanel, LevelUpModal, PauseMenu, TitleScreen } from "./ui/Overlays";
+import { SettingsPanel } from "./ui/SettingsPanel";
 
 Object.values(MODELS).forEach((u) => useGLTF.preload(u));
 
@@ -31,6 +35,18 @@ function ReadyMarker() {
     getWorld().sceneReady = true;
   });
   return null;
+}
+
+/** Turn a screen tap into a world target and act on it. */
+function tapAtScreen(clientX: number, clientY: number, canvas: HTMLCanvasElement | null): string | null {
+  const g = useGame.getState();
+  if (g.phase !== "playing" || g.panel || g.levelUp || !useSettings.getState().tapToMove || !canvas) return null;
+  const w = getWorld();
+  if (!w.rayAt) return null;
+  const r = canvas.getBoundingClientRect();
+  const ray = w.rayAt(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+  const target = pickTap(ray, w.sim.customers);
+  return target ? handleTap(target) : null;
 }
 
 function Scene() {
@@ -63,6 +79,7 @@ function Scene() {
       {FIXTURE_IDS.map((f) => (FIXTURES[f].kind === "rack" ? <Rack key={f} fixture={f} /> : <DisplayCase key={f} fixture={f} />))}
       <Mirror />
       <InteractRings />
+      <TapMarker />
       <Player />
       <Customers />
       <Suspense fallback={null}>
@@ -82,13 +99,16 @@ export default function Game() {
   const panel = useGame((s) => s.panel);
   const drag = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<number | null>(null);
+  const tap = useRef<{ id: number; x: number; y: number; t: number; moved: number; multi: boolean } | null>(null);
 
   // keyboard
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (input.rebinding) return; // the settings screen is capturing this key
       const g = useGame.getState();
+      const acts = actionsForKey(useSettings.getState().keys, e.code);
       const menuOpen = g.phase !== "playing" || !!g.panel || !!g.levelUp;
-      if (!menuOpen && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+      if (!menuOpen && (acts.length || ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code))) e.preventDefault();
       input.keys.add(e.code);
       if (e.repeat) return;
       unlockAudio();
@@ -98,11 +118,15 @@ export default function Game() {
         else if (!g.panel) g.pause();
         return;
       }
-      if (menuOpen) return;
-      if (e.code === "KeyE" || e.code === "Space") input.interactQueued = true;
-      else if (e.code === "KeyC") g.openPanel("computer");
-      else if (e.code === "KeyP") g.openPanel("customize");
-      else if (e.code === "KeyH") g.openPanel("help");
+      if (menuOpen) {
+        if (acts.includes("pause") && g.panel === "pause") g.closePanel();
+        return;
+      }
+      if (acts.includes("interact")) input.interactQueued = true;
+      else if (acts.includes("computer")) g.openPanel("computer");
+      else if (acts.includes("customize")) g.openPanel("customize");
+      else if (acts.includes("help")) g.openPanel("help");
+      else if (acts.includes("pause")) g.pause();
     };
     const up = (e: KeyboardEvent) => input.keys.delete(e.code);
     const blur = () => input.keys.clear();
@@ -157,17 +181,26 @@ export default function Game() {
       setYaw: (y: number) => (getWorld().cam.yaw = y),
       checkout: checkoutFront,
       interact,
+      /** Tap at a screen position (CSS px) like a finger or mouse click would. */
+      tapScreen: (x: number, y: number) => tapAtScreen(x, y, document.querySelector("[data-game-root] canvas")),
+      tapTarget: (t: TapTarget) => handleTap(t),
+      settings: useSettings,
     };
   }, []);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!(e.target instanceof HTMLCanvasElement)) return;
+    if (drag.current.size === 0 && (e.pointerType !== "mouse" || e.button === 0))
+      tap.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, multi: false };
+    else if (tap.current) tap.current.multi = true;
     drag.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const prev = drag.current.get(e.pointerId);
     if (!prev) return;
+    const tp = tap.current;
+    if (tp && tp.id === e.pointerId) tp.moved = Math.max(tp.moved, Math.hypot(e.clientX - tp.x, e.clientY - tp.y));
     const pts = drag.current;
     if (pts.size === 1) {
       input.camYawDelta -= (e.clientX - prev.x) * 0.006;
@@ -182,6 +215,14 @@ export default function Game() {
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    const tp = tap.current;
+    if (tp && tp.id === e.pointerId) {
+      tap.current = null;
+      if (e.type === "pointerup" && !tp.multi && tp.moved < 10 && performance.now() - tp.t < 600) {
+        unlockAudio();
+        tapAtScreen(e.clientX, e.clientY, e.currentTarget.querySelector("canvas"));
+      }
+    }
     drag.current.delete(e.pointerId);
     if (drag.current.size < 2) pinch.current = null;
   };
@@ -210,6 +251,7 @@ export default function Game() {
       {panel === "customize" && <CustomizePanel />}
       {panel === "help" && <HelpPanel />}
       {panel === "pause" && <PauseMenu />}
+      {panel === "settings" && <SettingsPanel />}
       <LevelUpModal />
     </div>
   );

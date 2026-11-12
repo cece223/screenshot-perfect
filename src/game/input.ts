@@ -2,6 +2,8 @@
  * Every input source (keyboard, touch joystick, gamepad) writes here; the stepper
  * merges them once per frame. Axes: fwd +1 = away from camera, strafe +1 = screen right.
  */
+import { DEFAULT_KEYS, isKeyDown, type KeyBinds } from "./bindings";
+
 export const input = {
   keys: new Set<string>(),
   joy: { fwd: 0, strafe: 0 },
@@ -12,14 +14,14 @@ export const input = {
   prevPad: [] as boolean[],
   prevNav: { x: 0, y: 0 },
   navRepeat: 0,
+  /** While the settings screen waits for a new key / button, normal controls are ignored. */
+  rebinding: null as null | "key" | "pad",
+  capturedPad: null as number | null,
 };
 
-export function keysToAxes(keys: Set<string>): { fwd: number; strafe: number } {
-  const k = (...c: string[]) => (c.some((x) => keys.has(x)) ? 1 : 0);
-  return {
-    fwd: k("KeyW", "ArrowUp") - k("KeyS", "ArrowDown"),
-    strafe: k("KeyD", "ArrowRight") - k("KeyA", "ArrowLeft"),
-  };
+export function keysToAxes(keys: Set<string>, binds: KeyBinds = DEFAULT_KEYS): { fwd: number; strafe: number } {
+  const k = (a: "up" | "down" | "left" | "right") => (isKeyDown(binds, keys, a) ? 1 : 0);
+  return { fwd: k("up") - k("down"), strafe: k("right") - k("left") };
 }
 
 /** Radial deadzone rescaled from its edge: resting sticks read ±0.05-0.15, never 0. */
@@ -56,6 +58,7 @@ export interface PadState {
   strafe: number;
   lookX: number;
   lookY: number;
+  buttonCount: number;
   pressed: (i: number) => boolean;
   justPressed: (i: number) => boolean;
 }
@@ -78,6 +81,7 @@ export function pollGamepad(): PadState | null {
     ...move,
     lookX: lx,
     lookY: ly,
+    buttonCount: buttons.length,
     pressed: (i) => !!buttons[i],
     justPressed: (i) => !!buttons[i] && !prev[i],
   };
@@ -86,7 +90,7 @@ export function pollGamepad(): PadState | null {
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
 
 /** Move gamepad focus through the buttons of the top-most open menu. */
-export function gamepadMenuNav(pad: PadState, dt: number, onBack: () => void) {
+export function gamepadMenuNav(pad: PadState, dt: number, onBack: () => void, confirm: number = PAD.A, back: number = PAD.B) {
   const scopes = document.querySelectorAll<HTMLElement>("[data-gp-scope]");
   const scope = scopes[scopes.length - 1];
   if (!scope) return;
@@ -115,7 +119,7 @@ export function gamepadMenuNav(pad: PadState, dt: number, onBack: () => void) {
       next.scrollIntoView({ block: "nearest" });
     }
   }
-  if (pad.justPressed(PAD.A)) {
+  if (pad.justPressed(confirm)) {
     const el = current >= 0 ? items[current] : null;
     if (el) el.click();
     else {
@@ -123,5 +127,5 @@ export function gamepadMenuNav(pad: PadState, dt: number, onBack: () => void) {
       items[0]?.focus();
     }
   }
-  if (pad.justPressed(PAD.B)) onBack();
+  if (pad.justPressed(back)) onBack();
 }

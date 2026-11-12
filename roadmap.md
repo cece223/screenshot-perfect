@@ -9,3 +9,5 @@
 - [x] Saved progress (this device)
 - [x] Pause menu: resume, save, how to play, save & main menu (Esc, pause button, Start)
 - [x] Tests for economy, customer AI, controls
+- [x] Settings menu: control layout (auto / touch / keyboard / mouse / controller), remap keyboard keys + controller buttons, reset
+- [x] Tap / click anything: floor to walk, register / computer / mirror to use, racks for stock info, shoppers for status

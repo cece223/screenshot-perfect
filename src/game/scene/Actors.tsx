@@ -138,3 +138,25 @@ export function InteractRings() {
     </>
   );
 }
+
+/** Pulsing dot where a tap / click sent the player. */
+export function TapMarker() {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    const m = ref.current;
+    if (!m) return;
+    const route = getWorld().player.route;
+    const last = route[route.length - 1];
+    m.visible = !!last;
+    if (!last) return;
+    m.position.set(last.x, 0.03, last.z);
+    const s = 1 + Math.sin(clock.elapsedTime * 6) * 0.12;
+    m.scale.set(s, s, s);
+  });
+  return (
+    <mesh ref={ref} rotation-x={-Math.PI / 2} visible={false}>
+      <ringGeometry args={[0.16, 0.28, 32]} />
+      <meshBasicMaterial color="#c9604f" transparent opacity={0.85} depthWrite={false} />
+    </mesh>
+  );
+}
