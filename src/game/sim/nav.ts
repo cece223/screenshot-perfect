@@ -21,7 +21,7 @@ export function findPath(from: string, to: string): Vec2[] {
     for (const n of open)
       if ((best[n] ?? Infinity) < curD) {
         cur = n;
-        curD = best[n];
+        curD = best[n] ?? Infinity;
       }
     open.delete(cur);
     if (cur === to) break;
