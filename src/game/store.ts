@@ -13,7 +13,7 @@ import {
 import type { InteractId } from "./sim/layout";
 import { sfx, setMuted } from "./audio";
 
-export type Panel = null | "computer" | "customize" | "help" | "pause";
+export type Panel = null | "computer" | "customize" | "help" | "pause" | "settings";
 export interface Toast {
   id: number;
   text: string;
@@ -40,6 +40,8 @@ interface Persisted {
 interface GameState extends Persisted {
   phase: "title" | "playing";
   panel: Panel;
+  /** Menu to return to when the current one closes (e.g. Settings opened from Pause). */
+  panelBack: Panel;
   firstCustomize: boolean;
   prompt: InteractId | null;
   queueLength: number;
@@ -90,6 +92,7 @@ export const useGame = create<GameState>()(
       ...fresh(),
       phase: "title",
       panel: null,
+      panelBack: null,
       firstCustomize: false,
       prompt: null,
       queueLength: 0,
@@ -99,12 +102,12 @@ export const useGame = create<GameState>()(
       levelUp: null,
       gamepad: false,
 
-      newGame: () => set({ ...fresh(), muted: get().muted, phase: "playing", panel: "customize", firstCustomize: true }),
-      continueGame: () => set({ phase: "playing", panel: null }),
-      openPanel: (panel) => set({ panel }),
+      newGame: () => set({ ...fresh(), muted: get().muted, phase: "playing", panel: "customize", panelBack: null, firstCustomize: true }),
+      continueGame: () => set({ phase: "playing", panel: null, panelBack: null }),
+      openPanel: (panel) => set({ panel, panelBack: get().panel === "pause" ? "pause" : null }),
       closePanel: () => {
         if (get().firstCustomize) set({ firstCustomize: false, hasSave: true });
-        set({ panel: null });
+        set({ panel: get().panelBack, panelBack: null });
       },
       setAppearance: (a) => set({ appearance: { ...get().appearance, ...a } }),
 
@@ -194,7 +197,7 @@ export const useGame = create<GameState>()(
         get().toast("Game saved", "info");
       },
       toMainMenu: () =>
-        set({ hasSave: true, savedAt: Date.now(), phase: "title", panel: null, prompt: null, firstCustomize: false }),
+        set({ hasSave: true, savedAt: Date.now(), phase: "title", panel: null, panelBack: null, prompt: null, firstCustomize: false }),
     }),
     {
       name: "bloom-boutique-save-v1",
