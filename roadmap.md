@@ -7,4 +7,5 @@
 - [x] Leveling with unlock pop-ups
 - [x] Controls: keyboard, touch joystick + buttons, gamepad (incl. menu navigation)
 - [x] Saved progress (this device)
+- [x] Pause menu: resume, save, how to play, save & main menu (Esc, pause button, Start)
 - [x] Tests for economy, customer AI, controls
