@@ -37,3 +37,23 @@ describe("pause, save and main menu", () => {
     expect(s.cash).toBe(1234);
   });
 });
+
+describe("main menu character button", () => {
+  it("opens the look creator from the main menu and returns there when done", () => {
+    useGame.setState({ phase: "title", panel: null, panelBack: null, firstCustomize: false });
+    useGame.getState().openPanel("customize");
+    expect(useGame.getState().panel).toBe("customize");
+    useGame.getState().closePanel();
+    expect(useGame.getState().phase).toBe("title");
+    expect(useGame.getState().panel).toBeNull();
+  });
+
+  it("a new boutique keeps the look picked from the main menu", () => {
+    useGame.setState({ phase: "title", panel: null });
+    useGame.getState().setAppearance({ hairColor: "#123456" });
+    useGame.getState().newGame();
+    expect(useGame.getState().appearance.hairColor).toBe("#123456");
+    expect(useGame.getState().cash).toBe(700);
+  });
+});
+

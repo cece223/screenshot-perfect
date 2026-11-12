@@ -95,7 +95,7 @@ export function TitleScreen() {
           <button className={btn} onClick={go(() => open("settings"))}>
             Settings &amp; controls
           </button>
-          <div className="menu-btn mt-1 h-auto rounded-full px-4 py-1 text-xs font-semibold">
+          <div className="menu-note mt-1 rounded-full px-4 py-1 text-xs font-semibold">
             {hasSave ? `Lv ${levelInfo(xp).level} · $${cash.toLocaleString()} · ${savedLabel(savedAt)}` : `New shops start with $${STARTING_CASH}`}
           </div>
         </nav>

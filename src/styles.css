@@ -276,6 +276,11 @@
   .menu-btn:active {
     transform: translateY(2px);
   }
+  .menu-note {
+    color: var(--menu-ink);
+    background: color-mix(in oklch, var(--menu-cream) 82%, transparent);
+    border: 1px solid color-mix(in oklch, var(--menu-edge) 60%, transparent);
+  }
   .menu-btn-main {
     background: linear-gradient(to bottom, var(--menu-cream), var(--menu-peach));
     box-shadow:
