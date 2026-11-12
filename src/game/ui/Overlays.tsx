@@ -1,4 +1,6 @@
-import { CircleHelp, Home, Play, Save, Sparkles } from "lucide-react";
+import { CircleHelp, Home, Play, Save, Settings, Sparkles } from "lucide-react";
+import { keyLabel, padShort, type KeyAction, type PadAction } from "../bindings";
+import { useSettings } from "../settings";
 import { unlockAudio } from "../audio";
 import { STARTING_CASH, levelInfo } from "../sim/economy";
 import { useGame } from "../store";
@@ -58,7 +60,16 @@ export function TitleScreen() {
             {hasSave ? "New boutique" : `Open your boutique · $${STARTING_CASH}`}
           </button>
         </div>
-        <p className="mt-5 text-xs text-muted-foreground">Keyboard, touch and Bluetooth controllers supported</p>
+        <button
+          className="btn-game btn-ghost mx-auto mt-4 h-11 px-5 text-sm"
+          onClick={() => {
+            unlockAudio();
+            useGame.getState().openPanel("settings");
+          }}
+        >
+          <Settings className="h-4 w-4" /> Settings &amp; controls
+        </button>
+        <p className="mt-3 text-xs text-muted-foreground">Keyboard, mouse, touch and Bluetooth controllers supported</p>
       </div>
     </div>
   );
@@ -90,6 +101,9 @@ export function PauseMenu() {
           </button>
           <button className="btn-game btn-ghost h-12" onClick={save}>
             <Save className="h-5 w-5" /> Save game
+          </button>
+          <button className="btn-game btn-ghost h-12" onClick={() => open("settings")}>
+            <Settings className="h-5 w-5" /> Settings &amp; controls
           </button>
           <button className="btn-game btn-ghost h-12" onClick={() => open("help")}>
             <CircleHelp className="h-5 w-5" /> How to play
@@ -140,21 +154,32 @@ export function LevelUpModal() {
   );
 }
 
-const CONTROLS: [string, string, string, string][] = [
-  ["Move", "WASD / Arrows", "Joystick", "Left stick"],
-  ["Interact", "E / Space", "Hand button", "A / Cross"],
-  ["Camera", "Drag mouse · Q / R", "Drag screen", "Right stick · LB / RB"],
-  ["Zoom", "Wheel · - / =", "Pinch", "Right stick up/down"],
-  ["Computer", "C", "Computer button", "Y / Triangle"],
-  ["Customize", "P", "Shirt button", "X / Square"],
-  ["Pause / save", "Esc", "Pause button", "Start / Options"],
-  ["Close menu", "Esc", "✕", "B / Circle"],
-];
+function useControlsTable(): [string, string, string, string][] {
+  const keys = useSettings((s) => s.keys);
+  const pad = useSettings((s) => s.pad);
+  const k = (...a: KeyAction[]) =>
+    a
+      .flatMap((x) => keys[x].filter(Boolean).map((c) => keyLabel(c)))
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+      .join(" / ") || "—";
+  const p = (...a: PadAction[]) => a.map((x) => padShort(pad[x])).join(" / ");
+  return [
+    ["Move", k("up", "left", "down", "right"), "Joystick · tap the floor", "Left stick"],
+    ["Interact", k("interact"), "Hand button · tap it", p("interact")],
+    ["Camera", `Drag mouse · ${k("camLeft", "camRight")}`, "Drag screen", `Right stick · ${p("camLeft", "camRight")}`],
+    ["Zoom", `Wheel · ${k("zoomOut", "zoomIn")}`, "Pinch", "Right stick up/down"],
+    ["Computer", k("computer"), "Computer button", p("computer")],
+    ["Customize", k("customize"), "Shirt button", p("customize")],
+    ["Pause / save", `Esc · ${k("pause")}`, "Pause button", p("pause")],
+    ["Close menu", "Esc", "✕", p("back")],
+  ];
+}
 
 export function HelpPanel() {
   const close = useGame((s) => s.closePanel);
   const served = useGame((s) => s.served);
   const revenue = useGame((s) => s.revenue);
+  const CONTROLS = useControlsTable();
   return (
     <Sheet title="How to play" subtitle={`${served} customers served · $${revenue.toLocaleString()} total sales`} onClose={close}>
       <ol className="mb-5 list-decimal space-y-1.5 pl-5 text-sm">
@@ -162,6 +187,7 @@ export function HelpPanel() {
         <li>Shoppers browse your racks, grab items and line up at the <b>register</b>.</li>
         <li>Stand behind the counter and check them out for cash and XP.</li>
         <li>Level 5 unlocks accessories; level 10 unlocks store decor.</li>
+        <li>Tap or click the floor to walk, and tap the register, computer, mirror, racks or shoppers to use or check them.</li>
       </ol>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
@@ -186,9 +212,14 @@ export function HelpPanel() {
           </tbody>
         </table>
       </div>
-      <button className="btn-game btn-primary mt-5 h-12 w-full" onClick={close}>
-        Back to the shop
-      </button>
+      <div className="mt-5 flex gap-2">
+        <button className="btn-game btn-ghost h-12 flex-1" onClick={() => useGame.setState({ panel: "settings" })}>
+          <Settings className="h-4 w-4" /> Change controls
+        </button>
+        <button className="btn-game btn-primary h-12 flex-1" onClick={close}>
+          Back
+        </button>
+      </div>
     </Sheet>
   );
 }
