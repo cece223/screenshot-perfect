@@ -178,7 +178,7 @@ export function ComputerPanel() {
 
   return (
     <Sheet
-      title="Bloom Supply Co."
+      title="Main Street Supply"
       subtitle={
         <span>
           Wholesale orders go straight onto your racks · Balance <b className="text-foreground">${cash.toLocaleString()}</b>

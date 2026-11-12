@@ -96,7 +96,7 @@ export function StoreShell() {
       </mesh>
 
       <Storefront awning={awning} />
-      <Sign text="Bloom Boutique" position={[-3, 2.55, STORE.minZ + 0.03]} w={3.6} h={0.6} bg="#2f2a2a" fg="#f0d27a" />
+      <Sign text="Main Street Boutique" position={[-3, 2.55, STORE.minZ + 0.03]} w={4.8} h={0.6} bg="#2f2a2a" fg="#f0d27a" />
       <OfficeWalls />
     </group>
   );
