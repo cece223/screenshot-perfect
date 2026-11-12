@@ -1,4 +1,6 @@
 import { CircleHelp, Home, Play, Save, Settings, Sparkles } from "lucide-react";
+import menuTall from "@/assets/menu-boutique-tall.jpg";
+import menuWide from "@/assets/menu-boutique-wide.jpg";
 import { keyLabel, padShort, type KeyAction, type PadAction } from "../bindings";
 import { useSettings } from "../settings";
 import { unlockAudio } from "../audio";
@@ -18,6 +20,18 @@ export function savedLabel(at: number | null, now = Date.now()): string {
   return `Saved ${new Date(at).toLocaleDateString()}`;
 }
 
+/** A little tulip sprig flanking the menu title. */
+function Tulip({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg viewBox="0 0 40 80" aria-hidden className={`h-14 w-7 shrink-0 sm:h-20 sm:w-10 ${flip ? "-scale-x-100" : ""}`}>
+      <path d="M20 78 C20 60 21 44 20 26" stroke="var(--menu-leaf)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M20 62 C10 58 5 48 6 38 C14 44 19 52 20 62Z" fill="var(--menu-leaf)" />
+      <path d="M21 52 C30 48 34 40 33 31 C26 36 22 43 21 52Z" fill="var(--menu-leaf)" opacity="0.85" />
+      <path d="M12 12 C12 22 15 28 20 28 C25 28 28 22 28 12 L24 17 L20 8 L16 17Z" fill="var(--menu-tulip)" stroke="var(--menu-title-edge)" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export function TitleScreen() {
   const hasSave = useGame((s) => s.hasSave);
   const xp = useGame((s) => s.xp);
@@ -25,51 +39,66 @@ export function TitleScreen() {
   const newGame = useGame((s) => s.newGame);
   const cont = useGame((s) => s.continueGame);
   const savedAt = useGame((s) => s.savedAt);
+  const open = useGame((s) => s.openPanel);
+
+  const startFresh = () => {
+    resetWorld();
+    newGame();
+  };
+  const go = (fn: () => void) => () => {
+    unlockAudio();
+    fn();
+  };
+  const btn = "menu-btn h-12 w-64 text-lg [@media(max-height:480px)]:h-10 [@media(max-height:480px)]:text-base";
+
   return (
-    <div data-gp-scope className="title-wash absolute inset-0 z-30 flex flex-col items-center justify-end px-6 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] text-center md:justify-center md:pb-0">
-      <div className="animate-rise">
-        <div className="mb-2 text-xs font-extrabold uppercase tracking-[0.3em] text-primary">A cozy store simulator</div>
-        <h1 className="font-display text-5xl font-bold leading-none sm:text-7xl">
-          Bloom <span className="italic text-primary">Boutique</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-sm text-base text-muted-foreground">
-          Stock the racks, ring up shoppers and grow a little clothing shop into the prettiest store on the block.
-        </p>
-        <div className="mt-6 flex flex-col items-center gap-3">
-          {hasSave && (
-            <button
-              className="btn-game btn-primary h-14 w-64 text-lg"
-              onClick={() => {
-                unlockAudio();
-                cont();
-              }}
-            >
-              Continue · Lv {levelInfo(xp).level} · ${cash.toLocaleString()}
-            </button>
-          )}
-          {hasSave && savedAt && <div className="-mt-1 text-xs font-semibold text-muted-foreground">{savedLabel(savedAt)}</div>}
-          <button
-            className={`btn-game h-14 w-64 text-lg ${hasSave ? "btn-ghost" : "btn-primary"}`}
-            onClick={() => {
-              unlockAudio();
-              if (hasSave && !window.confirm("Start over? Your current boutique will be replaced.")) return;
-              resetWorld();
-              newGame();
-            }}
-          >
-            {hasSave ? "New boutique" : `Open your boutique · $${STARTING_CASH}`}
-          </button>
+    <div data-gp-scope className="absolute inset-0 z-30 overflow-hidden">
+      <picture>
+        <source media="(orientation: portrait)" srcSet={menuTall} />
+        <img
+          src={menuWide}
+          alt="A cozy boutique with a gilded mirror, lavender armchair, jewelry case and clothing rack"
+          width={1920}
+          height={1088}
+          className="absolute inset-0 h-full w-full object-cover object-left portrait:object-top"
+        />
+      </picture>
+      <div className="menu-shade absolute inset-0" />
+
+      <div className="relative flex h-full flex-col items-center overflow-y-auto px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2.5rem,env(safe-area-inset-top))] landscape:w-full landscape:max-w-[34rem] landscape:justify-center landscape:pt-6 landscape:sm:pl-[6vw] portrait:pt-[max(4rem,calc(env(safe-area-inset-top)+3rem))]">
+        <div className="flex animate-rise items-center gap-1 sm:gap-2">
+          <Tulip />
+          <h1 className="menu-title text-center text-[2.6rem] leading-[0.95] sm:text-6xl [@media(max-height:480px)]:text-4xl">
+            Main Street
+            <br />
+            Boutique
+          </h1>
+          <Tulip flip />
         </div>
-        <button
-          className="btn-game btn-ghost mx-auto mt-4 h-11 px-5 text-sm"
-          onClick={() => {
-            unlockAudio();
-            useGame.getState().openPanel("settings");
-          }}
-        >
-          <Settings className="h-4 w-4" /> Settings &amp; controls
-        </button>
-        <p className="mt-3 text-xs text-muted-foreground">Keyboard, mouse, touch and Bluetooth controllers supported</p>
+
+        <nav aria-label="Main menu" className="mt-8 flex animate-rise flex-col items-center gap-3 [@media(max-height:480px)]:mt-4 [@media(max-height:480px)]:gap-2">
+          <button className={`${btn} menu-btn-main`} onClick={go(hasSave ? cont : startFresh)}>
+            Open your boutique
+          </button>
+          <button
+            className={btn}
+            onClick={go(() => {
+              if (hasSave && !window.confirm("Start over? Your current boutique will be replaced.")) return;
+              startFresh();
+            })}
+          >
+            New boutique
+          </button>
+          <button className={btn} onClick={go(() => open("customize"))}>
+            Character
+          </button>
+          <button className={btn} onClick={go(() => open("settings"))}>
+            Settings &amp; controls
+          </button>
+          <div className="menu-btn mt-1 h-auto rounded-full px-4 py-1 text-xs font-semibold">
+            {hasSave ? `Lv ${levelInfo(xp).level} · $${cash.toLocaleString()} · ${savedLabel(savedAt)}` : `New shops start with $${STARTING_CASH}`}
+          </div>
+        </nav>
       </div>
     </div>
   );
