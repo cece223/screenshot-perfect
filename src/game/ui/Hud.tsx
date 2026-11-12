@@ -85,7 +85,10 @@ export function Hud() {
           <IconBtn label="Controls help" className="hidden sm:flex" onClick={() => open("help")}>
             <CircleHelp className="h-5 w-5" />
           </IconBtn>
-          <IconBtn label={muted ? "Unmute" : "Mute"} onClick={toggleMute}>
+          <IconBtn label="Settings" onClick={() => open("settings")}>
+            <Settings className="h-5 w-5" />
+          </IconBtn>
+          <IconBtn label={muted ? "Unmute" : "Mute"} className="hidden sm:flex" onClick={toggleMute}>
             {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </IconBtn>
           <IconBtn label="Pause" onClick={pause}>
@@ -111,7 +114,7 @@ export function Hud() {
       <div className="flex-1" />
 
       {/* prompt (keyboard / controller) */}
-      {label && !coarse && (
+      {label && !touch && (
         <div className="mb-[max(4.5rem,calc(env(safe-area-inset-bottom)+4rem))] flex justify-center px-3">
           <button
             className="hud-glass pointer-events-auto flex animate-rise items-center gap-3 rounded-full px-4 py-2.5 font-bold"
@@ -120,14 +123,14 @@ export function Hud() {
               input.interactQueued = true;
             }}
           >
-            <span className="key-cap">{gamepad ? "A" : "E"}</span>
+            {hint}
             {label}
           </button>
         </div>
       )}
 
       {/* touch controls */}
-      {coarse && (
+      {touch && (
         <div className="flex items-end justify-between gap-3 px-4 pb-[max(4.5rem,calc(env(safe-area-inset-bottom)+4rem))]">
           <div className="pointer-events-auto">
             <Joystick />
@@ -158,16 +161,28 @@ export function Hud() {
           </div>
         </div>
       )}
-      {coarse && label && (
+      {touch && label && (
         <div className="pointer-events-none absolute inset-x-0 bottom-[max(14rem,calc(env(safe-area-inset-bottom)+13.5rem))] flex justify-center">
           <span className="hud-glass animate-rise rounded-full px-4 py-1.5 text-sm font-bold">{label}</span>
         </div>
       )}
-      {!coarse && (
-        <div className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 hidden items-center gap-2 lg:flex">
+      {!touch && (
+        <div
+          className={`pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 items-center gap-2 ${
+            layout === "mouse" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           <button className="btn-game btn-ghost hud-glass h-10 px-4 text-sm" onClick={() => open("computer")}>
-            <Monitor className="h-4 w-4" /> Computer <span className="key-cap">C</span>
+            <Monitor className="h-4 w-4" /> Computer
+            {layout === "gamepad" ? (
+              <span className="key-cap">{padShort(padB.computer)}</span>
+            ) : layout === "keyboard" ? (
+              <span className="key-cap">{firstKey("computer")}</span>
+            ) : null}
           </button>
+          {layout === "mouse" && tapOn && !label && (
+            <span className="hud-glass rounded-full px-3 py-2 text-xs font-bold text-muted-foreground">Click the floor to walk · click things to use them</span>
+          )}
         </div>
       )}
     </div>
