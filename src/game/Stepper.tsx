@@ -59,7 +59,9 @@ export function Stepper() {
     // --- gamepad
     const pad = pollGamepad();
     if (!!pad !== g.gamepad) useGame.setState({ gamepad: !!pad });
-    if (pad && menuOpen) {
+    if (pad && menuOpen && g.panel === "pause" && pad.justPressed(PAD.START)) {
+      g.closePanel();
+    } else if (pad && menuOpen) {
       gamepadMenuNav(pad, dt, () => {
         const s = useGame.getState();
         if (s.levelUp) s.dismissLevelUp();
@@ -68,7 +70,8 @@ export function Stepper() {
     } else if (pad) {
       if (pad.justPressed(PAD.A)) input.interactQueued = true;
       if (pad.justPressed(PAD.Y)) g.openPanel("computer");
-      if (pad.justPressed(PAD.X) || pad.justPressed(PAD.START)) g.openPanel("customize");
+      if (pad.justPressed(PAD.X)) g.openPanel("customize");
+      if (pad.justPressed(PAD.START)) g.pause();
     }
 
     // --- movement

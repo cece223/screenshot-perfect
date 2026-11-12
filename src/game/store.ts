@@ -13,7 +13,7 @@ import {
 import type { InteractId } from "./sim/layout";
 import { sfx, setMuted } from "./audio";
 
-export type Panel = null | "computer" | "customize" | "help";
+export type Panel = null | "computer" | "customize" | "help" | "pause";
 export interface Toast {
   id: number;
   text: string;
@@ -33,6 +33,8 @@ interface Persisted {
   served: number;
   revenue: number;
   muted: boolean;
+  /** When the player last saved (manual save or returning to the main menu). */
+  savedAt: number | null;
 }
 
 interface GameState extends Persisted {
@@ -59,6 +61,9 @@ interface GameState extends Persisted {
   toast: (text: string, kind?: Toast["kind"]) => void;
   dismissLevelUp: () => void;
   toggleMute: () => void;
+  pause: () => void;
+  saveGame: () => void;
+  toMainMenu: () => void;
 }
 
 const fresh = (): Persisted => ({
@@ -74,6 +79,7 @@ const fresh = (): Persisted => ({
   served: 0,
   revenue: 0,
   muted: false,
+  savedAt: null,
 });
 
 let toastId = 1;
@@ -178,6 +184,17 @@ export const useGame = create<GameState>()(
         setMuted(m);
         set({ muted: m });
       },
+      pause: () => {
+        const s = get();
+        if (s.phase !== "playing" || s.panel || s.levelUp) return;
+        set({ panel: "pause" });
+      },
+      saveGame: () => {
+        set({ hasSave: true, savedAt: Date.now() });
+        get().toast("Game saved", "info");
+      },
+      toMainMenu: () =>
+        set({ hasSave: true, savedAt: Date.now(), phase: "title", panel: null, prompt: null, firstCustomize: false }),
     }),
     {
       name: "bloom-boutique-save-v1",
@@ -195,6 +212,7 @@ export const useGame = create<GameState>()(
         served: s.served,
         revenue: s.revenue,
         muted: s.muted,
+        savedAt: s.savedAt,
       }),
       onRehydrateStorage: () => (s) => {
         if (s) setMuted(s.muted);
