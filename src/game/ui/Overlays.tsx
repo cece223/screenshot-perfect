@@ -1,9 +1,20 @@
-import { Sparkles } from "lucide-react";
+import { CircleHelp, Home, Play, Save, Sparkles } from "lucide-react";
 import { unlockAudio } from "../audio";
 import { STARTING_CASH, levelInfo } from "../sim/economy";
 import { useGame } from "../store";
 import { resetWorld } from "../world";
 import { Sheet } from "./Sheet";
+
+/** "just now", "5 min ago", "2 h ago", or a date. */
+export function savedLabel(at: number | null, now = Date.now()): string {
+  if (!at) return "Not saved yet";
+  const min = Math.floor((now - at) / 60000);
+  if (min < 1) return "Saved just now";
+  if (min < 60) return `Saved ${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Saved ${h} h ago`;
+  return `Saved ${new Date(at).toLocaleDateString()}`;
+}
 
 export function TitleScreen() {
   const hasSave = useGame((s) => s.hasSave);
@@ -11,6 +22,7 @@ export function TitleScreen() {
   const cash = useGame((s) => s.cash);
   const newGame = useGame((s) => s.newGame);
   const cont = useGame((s) => s.continueGame);
+  const savedAt = useGame((s) => s.savedAt);
   return (
     <div data-gp-scope className="title-wash absolute inset-0 z-30 flex flex-col items-center justify-end px-6 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] text-center md:justify-center md:pb-0">
       <div className="animate-rise">
@@ -33,6 +45,7 @@ export function TitleScreen() {
               Continue · Lv {levelInfo(xp).level} · ${cash.toLocaleString()}
             </button>
           )}
+          {hasSave && savedAt && <div className="-mt-1 text-xs font-semibold text-muted-foreground">{savedLabel(savedAt)}</div>}
           <button
             className={`btn-game h-14 w-64 text-lg ${hasSave ? "btn-ghost" : "btn-primary"}`}
             onClick={() => {
@@ -46,6 +59,45 @@ export function TitleScreen() {
           </button>
         </div>
         <p className="mt-5 text-xs text-muted-foreground">Keyboard, touch and Bluetooth controllers supported</p>
+      </div>
+    </div>
+  );
+}
+
+export function PauseMenu() {
+  const close = useGame((s) => s.closePanel);
+  const open = useGame((s) => s.openPanel);
+  const save = useGame((s) => s.saveGame);
+  const toMenu = useGame((s) => s.toMainMenu);
+  const xp = useGame((s) => s.xp);
+  const cash = useGame((s) => s.cash);
+  const served = useGame((s) => s.served);
+  const savedAt = useGame((s) => s.savedAt);
+  return (
+    <div data-gp-scope className="absolute inset-0 z-40 flex items-center justify-center bg-foreground/35 p-5">
+      <div role="dialog" aria-label="Paused" className="panel-sheet w-full max-w-sm animate-pop-in rounded-3xl p-6 text-center">
+        <div className="text-xs font-extrabold uppercase tracking-[0.3em] text-primary">Game paused</div>
+        <h2 className="font-display text-4xl font-bold">Taking a break</h2>
+        <div className="mt-3 flex justify-center gap-2 text-sm font-bold">
+          <span className="chip">Lv {levelInfo(xp).level}</span>
+          <span className="chip">${cash.toLocaleString()}</span>
+          <span className="chip">{served} served</span>
+        </div>
+        <div className="mt-2 text-xs font-semibold text-muted-foreground">{savedLabel(savedAt)}</div>
+        <div className="mt-5 flex flex-col gap-2">
+          <button className="btn-game btn-primary h-12" onClick={close}>
+            <Play className="h-5 w-5" /> Resume
+          </button>
+          <button className="btn-game btn-ghost h-12" onClick={save}>
+            <Save className="h-5 w-5" /> Save game
+          </button>
+          <button className="btn-game btn-ghost h-12" onClick={() => open("help")}>
+            <CircleHelp className="h-5 w-5" /> How to play
+          </button>
+          <button className="btn-game btn-ghost h-12" onClick={toMenu}>
+            <Home className="h-5 w-5" /> Save &amp; main menu
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -95,6 +147,7 @@ const CONTROLS: [string, string, string, string][] = [
   ["Zoom", "Wheel · - / =", "Pinch", "Right stick up/down"],
   ["Computer", "C", "Computer button", "Y / Triangle"],
   ["Customize", "P", "Shirt button", "X / Square"],
+  ["Pause / save", "Esc", "Pause button", "Start / Options"],
   ["Close menu", "Esc", "✕", "B / Circle"],
 ];
 

@@ -1,4 +1,4 @@
-import { CircleHelp, Gamepad2, Hand, Monitor, Shirt, Users, Volume2, VolumeX } from "lucide-react";
+import { CircleHelp, Gamepad2, Hand, Monitor, Pause, Shirt, Users, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useState } from "react";
 import { input } from "../input";
 import { levelInfo } from "../sim/economy";
@@ -35,6 +35,7 @@ export function Hud() {
   const toasts = useGame((s) => s.toasts);
   const open = useGame((s) => s.openPanel);
   const toggleMute = useGame((s) => s.toggleMute);
+  const pause = useGame((s) => s.pause);
   const coarse = useCoarsePointer();
   const { level, into, needed } = levelInfo(xp);
 
@@ -77,11 +78,14 @@ export function Hud() {
           <IconBtn label="Customize character" onClick={() => open("customize")}>
             <Shirt className="h-5 w-5" />
           </IconBtn>
-          <IconBtn label="Controls help" onClick={() => open("help")}>
+          <IconBtn label="Controls help" className="hidden sm:flex" onClick={() => open("help")}>
             <CircleHelp className="h-5 w-5" />
           </IconBtn>
           <IconBtn label={muted ? "Unmute" : "Mute"} onClick={toggleMute}>
             {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </IconBtn>
+          <IconBtn label="Pause" onClick={pause}>
+            <Pause className="h-5 w-5" />
           </IconBtn>
         </div>
       </div>
@@ -166,7 +170,17 @@ export function Hud() {
   );
 }
 
-function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function IconBtn({
+  label,
+  onClick,
+  children,
+  className = "flex",
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <button
       aria-label={label}
@@ -175,7 +189,7 @@ function IconBtn({ label, onClick, children }: { label: string; onClick: () => v
         unlockAudio();
         onClick();
       }}
-      className="hud-glass flex h-10 w-10 items-center justify-center rounded-full transition-transform active:scale-95"
+      className={`hud-glass ${className} h-10 w-10 items-center justify-center rounded-full transition-transform active:scale-95`}
     >
       {children}
     </button>

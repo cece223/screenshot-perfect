@@ -17,7 +17,7 @@ import { StoreShell } from "./scene/Store";
 import { ComputerPanel } from "./ui/ComputerPanel";
 import { CustomizePanel } from "./ui/CustomizePanel";
 import { Hud } from "./ui/Hud";
-import { HelpPanel, LevelUpModal, TitleScreen } from "./ui/Overlays";
+import { HelpPanel, LevelUpModal, PauseMenu, TitleScreen } from "./ui/Overlays";
 
 Object.values(MODELS).forEach((u) => useGLTF.preload(u));
 
@@ -95,6 +95,7 @@ export default function Game() {
       if (e.code === "Escape") {
         if (g.levelUp) g.dismissLevelUp();
         else if (g.panel && !g.firstCustomize) g.closePanel();
+        else if (!g.panel) g.pause();
         return;
       }
       if (menuOpen) return;
@@ -106,6 +107,11 @@ export default function Game() {
     const up = (e: KeyboardEvent) => input.keys.delete(e.code);
     const blur = () => input.keys.clear();
     const pad = () => useGame.getState().toast("Controller connected 🎮", "info");
+    // switching tabs or apps pauses the shop
+    const hidden = () => {
+      if (document.visibilityState === "hidden") useGame.getState().pause();
+    };
+    document.addEventListener("visibilitychange", hidden);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", blur);
@@ -115,6 +121,7 @@ export default function Game() {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
       window.removeEventListener("gamepadconnected", pad);
+      document.removeEventListener("visibilitychange", hidden);
     };
   }, []);
 
@@ -202,6 +209,7 @@ export default function Game() {
       {panel === "computer" && <ComputerPanel />}
       {panel === "customize" && <CustomizePanel />}
       {panel === "help" && <HelpPanel />}
+      {panel === "pause" && <PauseMenu />}
       <LevelUpModal />
     </div>
   );
