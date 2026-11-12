@@ -120,7 +120,8 @@ export function findPlayerPath(from: Vec2, to: Vec2, obstacles: AABB[] = OBSTACL
         }
       }
   }
-  if (came[e] === -1 && e !== s) return [];
+  if (e === s) return [goal];
+  if (came[e] === -1) return [];
   const cells: Vec2[] = [];
   for (let k = e; k !== -1 && k !== s; k = came[k]!) cells.push({ x: cx(k % COLS), z: cz(Math.floor(k / COLS)) });
   cells.reverse();
