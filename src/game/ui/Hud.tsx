@@ -1,22 +1,12 @@
-import { CircleHelp, Gamepad2, Hand, Monitor, Pause, Shirt, Users, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CircleHelp, Gamepad2, Hand, Monitor, MousePointerClick, Pause, Settings, Shirt, Users, Volume2, VolumeX } from "lucide-react";
+import { keyLabel, padShort, resolveLayout } from "../bindings";
 import { input } from "../input";
+import { useSettings } from "../settings";
 import { levelInfo } from "../sim/economy";
 import { useGame } from "../store";
 import { Joystick } from "./Joystick";
 import { unlockAudio } from "../audio";
-
-function useCoarsePointer() {
-  const [coarse, setCoarse] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    const update = () => setCoarse(mq.matches || "ontouchstart" in window);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return coarse;
-}
+import { useCoarsePointer } from "./useCoarsePointer";
 
 const PROMPTS = {
   register: (ready: boolean, q: number) => (ready ? "Check out customer" : q ? "Customer on the way…" : "Register · no one in line"),
@@ -36,7 +26,21 @@ export function Hud() {
   const open = useGame((s) => s.openPanel);
   const toggleMute = useGame((s) => s.toggleMute);
   const pause = useGame((s) => s.pause);
-  const coarse = useCoarsePointer();
+  const mode = useSettings((s) => s.controlMode);
+  const keys = useSettings((s) => s.keys);
+  const padB = useSettings((s) => s.pad);
+  const tapOn = useSettings((s) => s.tapToMove);
+  const layout = resolveLayout(mode, { coarse: useCoarsePointer(), gamepad });
+  const touch = layout === "touch";
+  const firstKey = (a: "interact" | "computer") => keyLabel(keys[a][0] ?? keys[a][1]);
+  const hint =
+    layout === "gamepad" ? (
+      <span className="key-cap">{padShort(padB.interact)}</span>
+    ) : layout === "mouse" ? (
+      <MousePointerClick className="h-5 w-5" />
+    ) : (
+      <span className="key-cap">{firstKey("interact")}</span>
+    );
   const { level, into, needed } = levelInfo(xp);
 
   const label =
