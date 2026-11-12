@@ -116,19 +116,22 @@ export function Stepper() {
     const cam = state.camera;
     if (g.phase === "title") {
       const t = state.clock.elapsedTime;
-      desired.set(Math.sin(t * 0.12) * 5, 9, 17);
-      lookGoal.set(0, 0.5, -1);
+      desired.set(Math.sin(t * 0.12) * 4, 12, 15);
+      lookGoal.set(0, 0, -1.5);
     } else if (g.panel === "customize") {
       const portrait = size.width < 768;
       const fx = Math.sin(p.heading);
       const fz = Math.cos(p.heading);
-      desired.set(p.x + fx * 3.7, 1.6, p.z + fz * 3.7);
+      const d = portrait ? 5.2 : 3.7;
+      desired.set(p.x + fx * d, portrait ? 1.9 : 1.6, p.z + fz * d);
       // keep the avatar clear of the panel: above it on phones, left of it on desktop
       const side = portrait ? 0 : 0.95;
-      lookGoal.set(p.x + fz * side, portrait ? 0.45 : 1.0, p.z - fx * side);
+      lookGoal.set(p.x + fz * side, portrait ? 0.05 : 1.0, p.z - fx * side);
     } else {
-      const h = Math.cos(CAM_PITCH) * w.cam.dist;
-      const v = Math.sin(CAM_PITCH) * w.cam.dist;
+      // narrow portrait screens see less sideways, so pull back a little
+      const dist = w.cam.dist * (size.width / size.height < 0.8 ? 1.2 : 1);
+      const h = Math.cos(CAM_PITCH) * dist;
+      const v = Math.sin(CAM_PITCH) * dist;
       desired.set(p.x + Math.sin(w.cam.yaw) * h, v + 0.6, p.z + Math.cos(w.cam.yaw) * h);
       desired.x = Math.max(STORE.minX + 0.4, Math.min(STORE.maxX - 0.4, desired.x));
       desired.z = Math.max(STORE.minZ + 0.4, Math.min(STORE.maxZ + 7, desired.z));
