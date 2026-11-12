@@ -122,11 +122,11 @@ export function Stepper() {
       const portrait = size.width < 768;
       const fx = Math.sin(p.heading);
       const fz = Math.cos(p.heading);
-      const d = portrait ? 5.2 : 3.7;
+      const d = portrait ? 6 : 3.7;
       desired.set(p.x + fx * d, portrait ? 1.9 : 1.6, p.z + fz * d);
       // keep the avatar clear of the panel: above it on phones, left of it on desktop
       const side = portrait ? 0 : 0.95;
-      lookGoal.set(p.x + fz * side, portrait ? 0.05 : 1.0, p.z - fx * side);
+      lookGoal.set(p.x + fz * side, portrait ? -0.35 : 1.0, p.z - fx * side);
     } else {
       // narrow portrait screens see less sideways, so pull back a little
       const dist = w.cam.dist * (size.width / size.height < 0.8 ? 1.2 : 1);
