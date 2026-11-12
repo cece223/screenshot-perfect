@@ -11,7 +11,7 @@ import { pickTap, type TapTarget } from "./sim/taps";
 import { useGame } from "./store";
 import { advanceSim, checkoutFront, getWorld, handleTap } from "./world";
 import { Stepper, interact } from "./Stepper";
-import { Customers, InteractRings, Player } from "./scene/Actors";
+import { Customers, InteractRings, Player, TapMarker } from "./scene/Actors";
 import { Decor } from "./scene/Decor";
 import { Counter, DisplayCase, FittingArea, Mirror, Rack } from "./scene/Fixtures";
 import { MODELS } from "./scene/models";
@@ -79,6 +79,7 @@ function Scene() {
       {FIXTURE_IDS.map((f) => (FIXTURES[f].kind === "rack" ? <Rack key={f} fixture={f} /> : <DisplayCase key={f} fixture={f} />))}
       <Mirror />
       <InteractRings />
+      <TapMarker />
       <Player />
       <Customers />
       <Suspense fallback={null}>
