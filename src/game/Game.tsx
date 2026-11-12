@@ -27,7 +27,7 @@ function ReadyMarker() {
     if (done.current) return;
     done.current = true;
     const el = document.querySelector<HTMLElement>("[data-game-root]");
-    if (el) el.dataset.sceneReady = "1";
+    if (el) el.dataset["sceneReady"] = "1";
     getWorld().sceneReady = true;
   });
   return null;

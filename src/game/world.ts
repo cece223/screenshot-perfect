@@ -59,7 +59,7 @@ export function advanceSim(dt: number) {
   }
   const queueLength = w.sim.queue.length;
   const frontReady = !!w.sim.frontReady();
-  const patch: Record<string, unknown> = {};
+  const patch: { customerIds?: number[]; queueLength?: number; frontReady?: boolean } = {};
   if (rosterChanged) patch.customerIds = w.sim.customers.map((c) => c.id);
   if (queueLength !== g.queueLength) patch.queueLength = queueLength;
   if (frontReady !== g.frontReady) patch.frontReady = frontReady;

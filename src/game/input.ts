@@ -63,7 +63,7 @@ export interface PadState {
 export function pollGamepad(): PadState | null {
   if (typeof navigator === "undefined" || !navigator.getGamepads) return null;
   const pads = navigator.getGamepads();
-  let pad: Gamepad | null = input.gamepadIndex !== null ? pads[input.gamepadIndex] : null;
+  let pad: Gamepad | null = input.gamepadIndex !== null ? (pads[input.gamepadIndex] ?? null) : null;
   if (!pad) {
     pad = Array.from(pads).find((p): p is Gamepad => !!p) ?? null;
     if (!pad) return null;
@@ -107,18 +107,20 @@ export function gamepadMenuNav(pad: PadState, dt: number, onBack: () => void) {
   input.prevNav = { x, y };
   const current = items.findIndex((el) => el === document.activeElement);
   if (dir !== 0) {
-    const next = current < 0 ? 0 : (current + dir + items.length) % items.length;
+    const next = items[current < 0 ? 0 : (current + dir + items.length) % items.length];
     items.forEach((el) => el.removeAttribute("data-gp-focused"));
-    items[next].setAttribute("data-gp-focused", "true");
-    items[next].focus();
-    items[next].scrollIntoView({ block: "nearest" });
+    if (next) {
+      next.setAttribute("data-gp-focused", "true");
+      next.focus();
+      next.scrollIntoView({ block: "nearest" });
+    }
   }
   if (pad.justPressed(PAD.A)) {
     const el = current >= 0 ? items[current] : null;
     if (el) el.click();
     else {
-      items[0].setAttribute("data-gp-focused", "true");
-      items[0].focus();
+      items[0]?.setAttribute("data-gp-focused", "true");
+      items[0]?.focus();
     }
   }
   if (pad.justPressed(PAD.B)) onBack();

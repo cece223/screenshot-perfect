@@ -34,7 +34,10 @@ export function surfaceTexture(opt: StyleOption): THREE.CanvasTexture {
   const hit = cache.get(opt.id);
   if (hit) return hit;
   const [c, g] = canvas();
-  const [a, b = a, c3 = b, d4 = c3] = opt.colors;
+  const a = opt.colors[0] ?? "#ffffff";
+  const b = opt.colors[1] ?? a;
+  const c3 = opt.colors[2] ?? b;
+  const d4 = opt.colors[3] ?? c3;
   const r = mulberry32(opt.id.length * 977);
   g.fillStyle = a;
   g.fillRect(0, 0, SIZE, SIZE);
@@ -123,7 +126,7 @@ export function surfaceTexture(opt: StyleOption): THREE.CanvasTexture {
       break;
     case "terrazzo":
       for (let i = 0; i < 420; i++) {
-        g.fillStyle = [b, c3, d4, "#ffffff"][i % 4];
+        g.fillStyle = [b, c3, d4, "#ffffff"][i % 4] ?? b;
         g.beginPath();
         const cx = r() * SIZE;
         const cy = r() * SIZE;
@@ -173,7 +176,7 @@ export function artTexture(seed: number) {
   g.fillStyle = "#f8f1e6";
   g.fillRect(0, 0, 256, 256);
   for (let i = 0; i < 6; i++) {
-    g.fillStyle = pal[Math.floor(r() * pal.length)];
+    g.fillStyle = pal[Math.floor(r() * pal.length)] ?? "#d9806b";
     g.beginPath();
     if (r() > 0.5) g.arc(r() * 256, r() * 256, 30 + r() * 70, 0, Math.PI * 2);
     else g.ellipse(r() * 256, r() * 256, 40 + r() * 80, 15 + r() * 40, r() * 3, 0, Math.PI * 2);

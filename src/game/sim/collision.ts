@@ -23,8 +23,8 @@ export function resolveCollisions(p: Vec2, r: number, obstacles: AABB[] = OBSTAC
           { x, z: b.minZ - r, d: z - b.minZ },
           { x, z: b.maxZ + r, d: b.maxZ - z },
         ].sort((a, c) => a.d - c.d);
-        x = opts[0].x;
-        z = opts[0].z;
+        x = opts[0]!.x;
+        z = opts[0]!.z;
       }
     }
     x = Math.max(STORE.minX + r, Math.min(STORE.maxX - r, x));

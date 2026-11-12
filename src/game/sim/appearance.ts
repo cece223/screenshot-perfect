@@ -51,9 +51,9 @@ export const OUTFIT_COLORS = [
 ];
 
 export const DEFAULT_APPEARANCE: Appearance = {
-  skin: SKIN_TONES[2],
+  skin: "#e5b48f",
   hairStyle: "ponytail",
-  hairColor: HAIR_COLORS[2],
+  hairColor: "#6b4429",
   top: "tee",
   topColor: "#d9806b",
   bottom: "jeans",

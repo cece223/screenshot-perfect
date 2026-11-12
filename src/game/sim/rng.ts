@@ -11,5 +11,5 @@ export function mulberry32(seed: number): () => number {
 }
 
 export function pick<T>(rand: () => number, arr: readonly T[]): T {
-  return arr[Math.floor(rand() * arr.length) % arr.length];
+  return arr[Math.floor(rand() * arr.length) % arr.length] as T;
 }

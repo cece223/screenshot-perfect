@@ -1,5 +1,5 @@
 import { FIXTURE_IDS, FIXTURES, type FixtureId, type Gender } from "./catalog";
-import { DOOR_NODE, FIXTURE_LAYOUT, NODES, QUEUE_APPROACH, QUEUE_SPOTS, type Vec2 } from "./layout";
+import { DOOR_NODE, FIXTURE_LAYOUT, QUEUE_APPROACH, QUEUE_SPOTS, nodePos, queueSpot, type Vec2 } from "./layout";
 import { findPath } from "./nav";
 import { mulberry32 } from "./rng";
 
@@ -101,7 +101,7 @@ export class CustomerSim {
 
   /** The customer at the front of the line, once they have reached the register. */
   frontReady(): Customer | null {
-    const c = this.queue.length ? this.get(this.queue[0]) : undefined;
+    const c = this.queue.length ? this.get(this.queue[0]!) : undefined;
     return c && c.phase === "queued" && c.path.length === 0 ? c : null;
   }
 
@@ -115,7 +115,7 @@ export class CustomerSim {
   }
 
   private spawn(ctx: StepContext) {
-    const door = NODES[DOOR_NODE];
+    const door = nodePos(DOOR_NODE);
     const c: Customer = {
       id: this.nextId++,
       gender: this.rand() < 0.55 ? "women" : "men",
@@ -147,10 +147,10 @@ export class CustomerSim {
     );
     let r = this.rand() * weights.reduce((a, b) => a + b, 0);
     for (let i = 0; i < opts.length; i++) {
-      r -= weights[i];
-      if (r <= 0) return opts[i];
+      r -= weights[i] ?? 0;
+      if (r <= 0) return opts[i]!;
     }
-    return opts[opts.length - 1];
+    return opts[opts.length - 1] ?? "wTops";
   }
 
   private goBrowse(c: Customer, ctx: StepContext) {
@@ -167,7 +167,7 @@ export class CustomerSim {
   private goQueue(c: Customer) {
     const idx = this.queue.length;
     this.queue.push(c.id);
-    c.path = [...findPath(c.lastNode, QUEUE_APPROACH), { ...QUEUE_SPOTS[idx] }];
+    c.path = [...findPath(c.lastNode, QUEUE_APPROACH), queueSpot(idx)];
     c.lastNode = QUEUE_APPROACH;
     c.goal = { kind: "queue" };
     c.phase = "walking";
@@ -178,7 +178,7 @@ export class CustomerSim {
 
   private goExit(c: Customer, mood: Mood) {
     this.removeFromQueue(c.id);
-    const door = NODES[DOOR_NODE];
+    const door = nodePos(DOOR_NODE);
     c.path = [...findPath(c.lastNode, DOOR_NODE), { x: door.x, z: door.z + 1.2 }];
     c.goal = { kind: "exit" };
     c.phase = "leaving";
@@ -192,7 +192,7 @@ export class CustomerSim {
     this.queue.forEach((qid, idx) => {
       const q = this.get(qid);
       if (!q) return;
-      const spot = { ...QUEUE_SPOTS[idx] };
+      const spot = queueSpot(idx);
       if (q.phase === "queued") {
         q.path = [spot];
       } else if (q.path.length) {
@@ -205,7 +205,7 @@ export class CustomerSim {
     if (c.path.length) {
       let budget = WALK_SPEED * dt;
       while (budget > 0 && c.path.length) {
-        const t = c.path[0];
+        const t = c.path[0]!;
         const dx = t.x - c.x;
         const dz = t.z - c.z;
         const d = Math.hypot(dx, dz);

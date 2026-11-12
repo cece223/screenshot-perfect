@@ -77,8 +77,8 @@ export function takeFromFixture(
 ): { stock: Stock; productId: string } | null {
   const avail = productsForFixture(fixture).filter((p) => (stock[p.id] ?? 0) > 0);
   if (avail.length === 0) return null;
-  const p = avail[Math.floor(rand() * avail.length) % avail.length];
-  return { stock: { ...stock, [p.id]: stock[p.id] - 1 }, productId: p.id };
+  const p = avail[Math.floor(rand() * avail.length) % avail.length]!;
+  return { stock: { ...stock, [p.id]: (stock[p.id] ?? 1) - 1 }, productId: p.id };
 }
 
 export function restoreItems(stock: Stock, ids: string[]): Stock {

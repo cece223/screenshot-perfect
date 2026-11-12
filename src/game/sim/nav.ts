@@ -1,4 +1,4 @@
-import { EDGES, NODES, type Vec2 } from "./layout";
+import { EDGES, NODES, nodePos, type Vec2 } from "./layout";
 
 const ADJ: Record<string, string[]> = {};
 for (const [a, b] of EDGES) {
@@ -19,7 +19,7 @@ export function findPath(from: string, to: string): Vec2[] {
     let cur = "";
     let curD = Infinity;
     for (const n of open)
-      if (best[n] < curD) {
+      if ((best[n] ?? Infinity) < curD) {
         cur = n;
         curD = best[n];
       }
@@ -28,7 +28,7 @@ export function findPath(from: string, to: string): Vec2[] {
     done.add(cur);
     for (const nb of ADJ[cur] ?? []) {
       if (done.has(nb)) continue;
-      const d = curD + dist(NODES[cur], NODES[nb]);
+      const d = curD + dist(nodePos(cur), nodePos(nb));
       if (d < (best[nb] ?? Infinity)) {
         best[nb] = d;
         prev[nb] = cur;
@@ -38,6 +38,10 @@ export function findPath(from: string, to: string): Vec2[] {
   }
   if (best[to] === undefined) return [];
   const ids = [to];
-  while (ids[0] !== from) ids.unshift(prev[ids[0]]);
-  return ids.map((id) => ({ ...NODES[id] }));
+  while (ids[0] !== from) {
+    const p = prev[ids[0]!];
+    if (!p) return [];
+    ids.unshift(p);
+  }
+  return ids.map(nodePos);
 }

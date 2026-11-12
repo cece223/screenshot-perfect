@@ -29,12 +29,23 @@ for (const [r, z] of Object.entries(ROWS)) for (const x of COLS) NODES[`${r}${x}
 
 export const EDGES: [string, string][] = [["D", "F0"]];
 for (const r of Object.keys(ROWS))
-  for (let i = 0; i < COLS.length - 1; i++) EDGES.push([`${r}${COLS[i]}`, `${r}${COLS[i + 1]}`]);
+  for (let i = 0; i < COLS.length - 1; i++) EDGES.push([`${r}${COLS[i]!}`, `${r}${COLS[i + 1]!}`]);
 for (const x of [-9, -3, 3]) {
   EDGES.push([`F${x}`, `M${x}`]);
   EDGES.push([`M${x}`, `B${x}`]);
 }
 export const DOOR_NODE = "D";
+
+export function nodePos(id: string): Vec2 {
+  const n = NODES[id];
+  if (!n) throw new Error(`Unknown nav node ${id}`);
+  return { x: n.x, z: n.z };
+}
+
+export function queueSpot(i: number): Vec2 {
+  const s = QUEUE_SPOTS[Math.max(0, Math.min(i, QUEUE_SPOTS.length - 1))]!;
+  return { x: s.x, z: s.z };
+}
 
 export interface FixtureLayout {
   x: number;
