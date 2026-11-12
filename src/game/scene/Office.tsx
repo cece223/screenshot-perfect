@@ -5,7 +5,7 @@ import { MODELS } from "./models";
 import { labelTexture } from "./textures";
 
 export function OfficeFurniture() {
-  const screenTex = useMemo(() => labelTexture("Bloom Supply Co.", { bg: "#d9806b", fg: "#fbf1e4", w: 512, h: 320 }), []);
+  const screenTex = useMemo(() => labelTexture("Main Street Supply", { bg: "#d9806b", fg: "#fbf1e4", w: 512, h: 320 }), []);
   const top = 0.84;
   return (
     <group>

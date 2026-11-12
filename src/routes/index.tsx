@@ -8,13 +8,13 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Bloom Boutique — 3D Clothing Store Simulator" },
+      { title: "Main Street Boutique — 3D Clothing Store Simulator" },
       {
         name: "description",
         content:
           "Run your own 3D clothing boutique: stock racks, check out shoppers, level up to unlock accessories and decor. Plays with keyboard, touch or controller.",
       },
-      { property: "og:title", content: "Bloom Boutique — 3D Clothing Store Simulator" },
+      { property: "og:title", content: "Main Street Boutique — 3D Clothing Store Simulator" },
       {
         property: "og:description",
         content: "Stock racks, ring up shoppers and grow a cozy 3D clothing boutique in your browser.",
@@ -29,9 +29,7 @@ export const Route = createFileRoute("/")({
 function Loading() {
   return (
     <div className="flex h-dvh w-full flex-col items-center justify-center gap-3 bg-background">
-      <div className="font-display text-4xl font-bold">
-        Bloom <span className="italic text-primary">Boutique</span>
-      </div>
+      <div className="font-title text-center text-4xl font-bold leading-tight">Main Street Boutique</div>
       <div className="h-1.5 w-40 overflow-hidden rounded-full bg-muted">
         <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
       </div>

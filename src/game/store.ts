@@ -102,7 +102,7 @@ export const useGame = create<GameState>()(
       levelUp: null,
       gamepad: false,
 
-      newGame: () => set({ ...fresh(), muted: get().muted, phase: "playing", panel: "customize", panelBack: null, firstCustomize: true }),
+      newGame: () => set({ ...fresh(), muted: get().muted, appearance: get().appearance, phase: "playing", panel: "customize", panelBack: null, firstCustomize: true }),
       continueGame: () => set({ phase: "playing", panel: null, panelBack: null }),
       openPanel: (panel) => set({ panel, panelBack: get().panel === "pause" ? "pause" : null }),
       closePanel: () => {

@@ -159,11 +159,7 @@ export function Stepper() {
 
     // --- camera
     const cam = state.camera;
-    if (g.phase === "title") {
-      const t = state.clock.elapsedTime;
-      desired.set(Math.sin(t * 0.12) * 4, 12, 15);
-      lookGoal.set(0, 0, -1.5);
-    } else if (g.panel === "customize") {
+    if (g.panel === "customize") {
       const portrait = size.width < 768;
       const fx = Math.sin(p.heading);
       const fz = Math.cos(p.heading);
@@ -172,6 +168,10 @@ export function Stepper() {
       // keep the avatar clear of the panel: above it on phones, left of it on desktop
       const side = portrait ? 0 : 0.95;
       lookGoal.set(p.x + fz * side, portrait ? -0.35 : 1.0, p.z - fx * side);
+    } else if (g.phase === "title") {
+      const t = state.clock.elapsedTime;
+      desired.set(Math.sin(t * 0.12) * 4, 12, 15);
+      lookGoal.set(0, 0, -1.5);
     } else {
       // narrow portrait screens see less sideways, so pull back a little
       const dist = w.cam.dist * (size.width / size.height < 0.8 ? 1.2 : 1);

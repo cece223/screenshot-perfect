@@ -54,13 +54,14 @@ export function CustomizePanel() {
   const set = useGame((s) => s.setAppearance);
   const close = useGame((s) => s.closePanel);
   const first = useGame((s) => s.firstCustomize);
+  const fromMenu = useGame((s) => s.phase === "title");
   const pick = <K extends keyof Appearance>(k: K) => (v: Appearance[K]) => set({ [k]: v } as Partial<Appearance>);
 
   return (
     <Sheet
       side
-      title={first ? "Meet your shop owner" : "Style Mirror"}
-      subtitle={first ? "Pick a look, then open the doors." : "Change your look anytime."}
+      title={first ? "Meet your shop owner" : fromMenu ? "Your character" : "Style Mirror"}
+      subtitle={first ? "Pick a look, then open the doors." : fromMenu ? "Your look comes with you into the boutique." : "Change your look anytime."}
       onClose={close}
       hideClose={first}
     >
@@ -85,7 +86,7 @@ export function CustomizePanel() {
           <Swatches label="Shoe color" colors={OUTFIT_COLORS} value={a.shoeColor} onPick={pick("shoeColor")} />
         </Section>
         <button onClick={close} className="btn-game btn-primary h-12 w-full text-base">
-          {first ? "Open the boutique" : "Done"}
+          {first ? "Open the boutique" : fromMenu ? "Back to menu" : "Done"}
         </button>
       </div>
     </Sheet>

@@ -11,3 +11,5 @@
 - [x] Tests for economy, customer AI, controls
 - [x] Settings menu: control layout (auto / touch / keyboard / mouse / controller), remap keyboard keys + controller buttons, reset
 - [x] Tap / click anything: floor to walk, register / computer / mirror to use, racks for stock info, shoppers for status
+- [x] Main menu redesign: Main Street Boutique art + Open your boutique / New boutique / Character / Settings & controls
+- [x] Menu artwork: modern, younger-crowd clothes on the rack (no vintage dresses/sun hats)

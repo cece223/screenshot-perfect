@@ -81,9 +81,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Bloom Boutique" },
+      { title: "Main Street Boutique" },
       { name: "description", content: "A cozy 3D clothing boutique simulator for browser and mobile." },
-      { property: "og:title", content: "Bloom Boutique" },
+      { property: "og:title", content: "Main Street Boutique" },
       { property: "og:description", content: "A cozy 3D clothing boutique simulator for browser and mobile." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -99,7 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,700&family=Manrope:wght@500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,700&family=Manrope:wght@500;600;700;800&display=swap",
       },
     ],
   }),

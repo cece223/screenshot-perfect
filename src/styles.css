@@ -8,11 +8,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Bloom Boutique design system: warm cream paper, terracotta rose, sage and brass gold. */
+/* Main Street Boutique design system: warm cream paper, terracotta rose, sage and brass gold. */
 
 @theme inline {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", Georgia, serif;
+  --font-title: "Cinzel Decorative", "Fraunces", Georgia, serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -101,6 +102,18 @@
   --sidebar-ring: oklch(0.62 0.135 30);
   --shadow-soft-value: 0 12px 32px -14px oklch(0.35 0.06 35 / 0.45);
   --shadow-lift-value: 0 4px 0 0 oklch(0.45 0.11 30), 0 14px 26px -12px oklch(0.35 0.08 30 / 0.6);
+  /* main menu: candle-lit cream pills on a sage boutique wall */
+  --menu-cream: oklch(0.95 0.03 82);
+  --menu-cream-deep: oklch(0.89 0.045 75);
+  --menu-peach: oklch(0.86 0.085 60);
+  --menu-edge: oklch(0.76 0.07 65);
+  --menu-ink: oklch(0.3 0.05 38);
+  --menu-glow: oklch(0.86 0.13 70);
+  --menu-title: oklch(0.96 0.035 80);
+  --menu-title-edge: oklch(0.42 0.07 40);
+  --menu-tulip: oklch(0.76 0.1 35);
+  --menu-leaf: oklch(0.6 0.08 140);
+  --menu-shade: oklch(0.3 0.03 150);
 }
 
 @layer base {
@@ -213,6 +226,67 @@
   [data-gp-focused="true"]:focus {
     outline: 3px solid var(--gold);
     outline-offset: 3px;
+  }
+  .menu-shade {
+    background:
+      linear-gradient(to right, color-mix(in oklch, var(--menu-shade) 38%, transparent), transparent 55%),
+      linear-gradient(to bottom, color-mix(in oklch, var(--menu-shade) 22%, transparent), transparent 40%);
+  }
+  @media (orientation: portrait) {
+    .menu-shade {
+      background: linear-gradient(to bottom, color-mix(in oklch, var(--menu-shade) 30%, transparent), transparent 65%);
+    }
+  }
+  .menu-title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    color: var(--menu-title);
+    letter-spacing: 0.01em;
+    -webkit-text-stroke: 1px var(--menu-title-edge);
+    paint-order: stroke fill;
+    text-shadow:
+      0 2px 0 var(--menu-title-edge),
+      0 0 18px color-mix(in oklch, var(--menu-glow) 75%, transparent),
+      0 0 42px color-mix(in oklch, var(--menu-glow) 45%, transparent);
+  }
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    border: 2px solid var(--menu-edge);
+    background: linear-gradient(to bottom, var(--menu-cream), var(--menu-cream-deep));
+    color: var(--menu-ink);
+    font-weight: 700;
+    box-shadow:
+      inset 0 2px 0 color-mix(in oklch, white 70%, transparent),
+      0 3px 0 0 color-mix(in oklch, var(--menu-title-edge) 55%, transparent),
+      0 10px 22px -10px color-mix(in oklch, var(--menu-shade) 80%, transparent);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .menu-btn:hover,
+  .menu-btn[data-gp-focused="true"] {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 2px 0 color-mix(in oklch, white 70%, transparent),
+      0 3px 0 0 color-mix(in oklch, var(--menu-title-edge) 55%, transparent),
+      0 0 22px 2px color-mix(in oklch, var(--menu-glow) 70%, transparent);
+  }
+  .menu-btn:active {
+    transform: translateY(2px);
+  }
+  .menu-note {
+    color: var(--menu-ink);
+    background: color-mix(in oklch, var(--menu-cream) 82%, transparent);
+    border: 1px solid color-mix(in oklch, var(--menu-edge) 60%, transparent);
+  }
+  .menu-btn-main {
+    background: linear-gradient(to bottom, var(--menu-cream), var(--menu-peach));
+    box-shadow:
+      inset 0 2px 0 color-mix(in oklch, white 70%, transparent),
+      0 3px 0 0 color-mix(in oklch, var(--menu-title-edge) 55%, transparent),
+      0 0 26px 4px color-mix(in oklch, var(--menu-glow) 65%, transparent);
   }
   .title-wash {
     background:

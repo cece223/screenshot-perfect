@@ -246,7 +246,7 @@ export default function Game() {
       >
         <Scene />
       </Canvas>
-      {phase === "title" ? <TitleScreen /> : <Hud />}
+      {phase === "title" ? panel !== "customize" && <TitleScreen /> : <Hud />}
       {panel === "computer" && <ComputerPanel />}
       {panel === "customize" && <CustomizePanel />}
       {panel === "help" && <HelpPanel />}
