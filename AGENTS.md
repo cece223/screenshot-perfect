@@ -28,3 +28,11 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- The game lives in `src/game/`: `sim/` is pure TypeScript (rules, economy, customer AI, layout; no React/three imports, unit-tested with vitest), `scene/` draws sim state with React Three Fiber, `ui/` is the DOM HUD and menus. Why: rules stay testable without a GPU.
+- `src/routes/index.tsx` lazy-loads `src/game/Game.tsx` inside `<ClientOnly>` with `ssr: false`. Why: three.js and localStorage must never run during SSR/worker module evaluation.
+- Per-frame state (player, camera, customers) lives in the lazily created `getWorld()` object; zustand (`src/game/store.ts`, persisted to localStorage) holds only UI-facing state. One `Stepper` useFrame advances input → player → interactions → sim → camera. Why: no 60 fps React re-renders.
+- `vite.config.ts` strips the dev-only `data-tsd-source` attribute from `src/game/scene/*.tsx` and `src/game/Game.tsx`; add any new file that renders R3F elements to that plugin's pattern. Why: R3F reads the dashed prop as a nested path and throws (blank game) when the value changes, e.g. after a hot reload.
+- Dev-only hooks: `window.__game` (`state`, `store`, `sim(seconds)`, `teleport(x,z,heading)`, `setYaw`, `checkout()`, `interact(id)`), and `[data-game-root][data-scene-ready]` once models have drawn. Why: sandbox WebGL is too slow to play in real time.
