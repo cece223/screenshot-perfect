@@ -1,5 +1,5 @@
 import { FIXTURE_IDS, FIXTURES, type FixtureId, type Gender } from "./catalog";
-import { DOOR_NODE, FIXTURE_LAYOUT, QUEUE_APPROACH, QUEUE_SPOTS, nodePos, queueSpot, type Vec2 } from "./layout";
+import { DOOR_NODE, FIXTURE_LAYOUT, QUEUE_APPROACH, QUEUE_LENGTH, clampRegisters, laneSpot, nodePos, type Vec2 } from "./layout";
 import { findPath } from "./nav";
 import { mulberry32 } from "./rng";
 
@@ -7,7 +7,8 @@ export const WALK_SPEED = 1.35;
 export const BROWSE_MIN = 2.5;
 export const BROWSE_MAX = 5;
 export const QUEUE_PATIENCE = 75;
-export const MAX_QUEUE = QUEUE_SPOTS.length;
+/** Shoppers per register line. */
+export const MAX_QUEUE = QUEUE_LENGTH;
 export const FIRST_SPAWN_DELAY = 2.5;
 export const MAX_VISITS = 3;
 
@@ -32,6 +33,8 @@ export interface Customer {
   patience: number;
   mood: Mood;
   lastNode: string;
+  /** Which register line the shopper joined. */
+  lane: number;
 }
 
 export interface StockPort {
@@ -44,6 +47,8 @@ export interface StepContext {
   stock: StockPort;
   level: number;
   appeal: number;
+  /** Registers the shop owns (each has its own line). Defaults to 1. */
+  registers?: number;
 }
 
 export type SimEvent =
@@ -63,7 +68,8 @@ export function maxCustomers(level: number): number {
 
 export class CustomerSim {
   customers: Customer[] = [];
-  queue: number[] = [];
+  /** One line per register: shopper ids, front first. */
+  queues: number[][] = [[]];
   events: SimEvent[] = [];
   spawnTimer = FIRST_SPAWN_DELAY;
   private nextId = 1;
@@ -83,7 +89,35 @@ export class CustomerSim {
     return e;
   }
 
+  /** Line for register 0 (the first counter). */
+  get queue(): number[] {
+    return this.queues[0]!;
+  }
+
+  /** Everyone in any line. */
+  queueTotal(): number {
+    return this.queues.reduce((s, q) => s + q.length, 0);
+  }
+
+  private syncLanes(ctx: StepContext) {
+    const n = clampRegisters(ctx.registers ?? 1);
+    while (this.queues.length < n) this.queues.push([]);
+    this.lanes = n;
+  }
+  private lanes = 1;
+
+  /** Shortest line with room (lowest register wins ties), or -1 when every line is full. */
+  private pickLane(): number {
+    let best = -1;
+    for (let i = 0; i < this.lanes; i++) {
+      const len = this.queues[i]!.length;
+      if (len < MAX_QUEUE && (best < 0 || len < this.queues[best]!.length)) best = i;
+    }
+    return best;
+  }
+
   step(dt: number, ctx: StepContext) {
+    this.syncLanes(ctx);
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = spawnInterval(ctx.appeal) * (0.7 + this.rand() * 0.6);
@@ -99,14 +133,15 @@ export class CustomerSim {
     });
   }
 
-  /** The customer at the front of the line, once they have reached the register. */
-  frontReady(): Customer | null {
-    const c = this.queue.length ? this.get(this.queue[0]!) : undefined;
+  /** The customer at the front of a register's line, once they have reached the counter. */
+  frontReady(reg = 0): Customer | null {
+    const q = this.queues[reg];
+    const c = q && q.length ? this.get(q[0]!) : undefined;
     return c && c.phase === "queued" && c.path.length === 0 ? c : null;
   }
 
-  checkout(): { id: number; items: string[] } | null {
-    const c = this.frontReady();
+  checkout(reg = 0): { id: number; items: string[] } | null {
+    const c = this.frontReady(reg);
     if (!c) return null;
     const items = c.items;
     c.items = [];
@@ -134,6 +169,7 @@ export class CustomerSim {
       patience: QUEUE_PATIENCE,
       mood: "browsing",
       lastNode: DOOR_NODE,
+      lane: 0,
     };
     this.customers.push(c);
     this.events.push({ type: "spawn", id: c.id });
@@ -164,10 +200,15 @@ export class CustomerSim {
     c.phase = "walking";
   }
 
-  private goQueue(c: Customer) {
-    const idx = this.queue.length;
-    this.queue.push(c.id);
-    c.path = [...findPath(c.lastNode, QUEUE_APPROACH), queueSpot(idx)];
+  private goQueue(c: Customer, lane: number) {
+    const q = this.queues[lane]!;
+    const idx = q.length;
+    q.push(c.id);
+    c.lane = lane;
+    const spot = laneSpot(lane, idx);
+    // come in from the side, between lines, so nobody walks through the shoppers ahead
+    const side = { x: spot.x - 1.1, z: spot.z };
+    c.path = [...findPath(c.lastNode, QUEUE_APPROACH), side, spot];
     c.lastNode = QUEUE_APPROACH;
     c.goal = { kind: "queue" };
     c.phase = "walking";
@@ -186,13 +227,14 @@ export class CustomerSim {
   }
 
   private removeFromQueue(id: number) {
-    const i = this.queue.indexOf(id);
-    if (i < 0) return;
-    this.queue.splice(i, 1);
-    this.queue.forEach((qid, idx) => {
+    const lane = this.queues.findIndex((q) => q.includes(id));
+    if (lane < 0) return;
+    const line = this.queues[lane]!;
+    line.splice(line.indexOf(id), 1);
+    line.forEach((qid, idx) => {
       const q = this.get(qid);
       if (!q) return;
-      const spot = queueSpot(idx);
+      const spot = laneSpot(lane, idx);
       if (q.phase === "queued") {
         q.path = [spot];
       } else if (q.path.length) {
@@ -258,9 +300,10 @@ export class CustomerSim {
   private finishBrowse(c: Customer, ctx: StepContext) {
     if (c.goal.kind !== "browse") return;
     if (c.waitingForQueue) {
-      if (this.queue.length < MAX_QUEUE) {
+      const lane = this.pickLane();
+      if (lane >= 0) {
         c.waitingForQueue = false;
-        this.goQueue(c);
+        this.goQueue(c, lane);
       } else c.browseLeft = 2;
       return;
     }
@@ -277,7 +320,8 @@ export class CustomerSim {
     const wantMore = c.visits < MAX_VISITS && this.rand() < (c.items.length ? 0.3 : 0.6);
     if (wantMore) return this.goBrowse(c, ctx);
     if (c.items.length) {
-      if (this.queue.length < MAX_QUEUE) return this.goQueue(c);
+      const lane = this.pickLane();
+      if (lane >= 0) return this.goQueue(c, lane);
       c.waitingForQueue = true;
       c.browseLeft = 2;
       return;
