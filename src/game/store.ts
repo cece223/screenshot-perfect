@@ -12,6 +12,7 @@ import {
 } from "./sim/economy";
 import type { InteractId } from "./sim/layout";
 import { sfx, setMuted } from "./audio";
+import { EMPLOYEE_COST, buyRegister as buyRegisterRule, hireEmployee as hireRule, type Employee } from "./sim/staff";
 
 export type Panel = null | "computer" | "customize" | "help" | "pause" | "settings";
 export interface Toast {
@@ -33,6 +34,10 @@ interface Persisted {
   served: number;
   revenue: number;
   muted: boolean;
+  /** Checkout counters owned (1–3). */
+  registers: number;
+  /** Hired cashiers. */
+  staff: Employee[];
   /** When the player last saved (manual save or returning to the main menu). */
   savedAt: number | null;
 }
@@ -45,7 +50,12 @@ interface GameState extends Persisted {
   firstCustomize: boolean;
   prompt: InteractId | null;
   queueLength: number;
+  /** Any register has a shopper ready to pay. */
   frontReady: boolean;
+  /** Bit n set: register n has a shopper ready to pay. */
+  readyMask: number;
+  /** Register the player is standing at, when the prompt is "register". */
+  promptReg: number | null;
   customerIds: number[];
   toasts: Toast[];
   levelUp: { level: number; unlocks: string[] } | null;
@@ -59,7 +69,9 @@ interface GameState extends Persisted {
   order: (productId: string, qty: number) => boolean;
   buyDecor: (id: string) => boolean;
   buyStyle: (id: string) => boolean;
-  recordSale: (items: string[]) => void;
+  recordSale: (items: string[], by?: string) => void;
+  buyRegister: () => boolean;
+  hireEmployee: () => boolean;
   toast: (text: string, kind?: Toast["kind"]) => void;
   dismissLevelUp: () => void;
   toggleMute: () => void;
@@ -81,6 +93,8 @@ const fresh = (): Persisted => ({
   served: 0,
   revenue: 0,
   muted: false,
+  registers: 1,
+  staff: [],
   savedAt: null,
 });
 
@@ -97,6 +111,8 @@ export const useGame = create<GameState>()(
       prompt: null,
       queueLength: 0,
       frontReady: false,
+      readyMask: 0,
+      promptReg: null,
       customerIds: [],
       toasts: [],
       levelUp: null,
@@ -160,13 +176,42 @@ export const useGame = create<GameState>()(
         return true;
       },
 
-      recordSale: (items) => {
+      buyRegister: () => {
+        const s = get();
+        const res = buyRegisterRule(s);
+        if (!res.ok || res.registers === undefined) {
+          get().toast(res.ok ? "Can't add a register" : res.reason, "warn");
+          sfx.error();
+          return false;
+        }
+        set({ cash: res.cash, registers: res.registers, hasSave: true });
+        get().toast(`Register ${res.registers} is open for business`, "info");
+        sfx.order();
+        return true;
+      },
+
+      hireEmployee: () => {
+        const s = get();
+        const res = hireRule(s, Math.floor(Math.random() * 1e9));
+        if (!res.ok || !res.staff) {
+          get().toast(res.ok ? "Can't hire right now" : res.reason, "warn");
+          sfx.error();
+          return false;
+        }
+        const hired = res.staff[res.staff.length - 1]!;
+        set({ cash: res.cash, staff: res.staff, hasSave: true });
+        get().toast(`${hired.name} joined your team for $${EMPLOYEE_COST}`, "info");
+        sfx.order();
+        return true;
+      },
+
+      recordSale: (items, by) => {
         const s = get();
         const { cash, xp } = checkoutReward(items);
         const before = levelInfo(s.xp).level;
         const after = levelInfo(s.xp + xp).level;
         set({ cash: s.cash + cash, xp: s.xp + xp, served: s.served + 1, revenue: s.revenue + cash, hasSave: true });
-        get().toast(`+$${cash} · +${xp} XP`, "money");
+        get().toast(`${by ? `${by}: ` : ""}+$${cash} · +${xp} XP`, "money");
         sfx.register();
         if (after > before) {
           const unlocks = unlockMessages(before, after);
@@ -215,6 +260,8 @@ export const useGame = create<GameState>()(
         served: s.served,
         revenue: s.revenue,
         muted: s.muted,
+        registers: s.registers,
+        staff: s.staff,
         savedAt: s.savedAt,
       }),
       onRehydrateStorage: () => (s) => {
