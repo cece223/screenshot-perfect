@@ -60,6 +60,8 @@ interface GameState extends Persisted {
   toasts: Toast[];
   levelUp: { level: number; unlocks: string[] } | null;
   gamepad: boolean;
+  /** Phone held upright: the game waits behind a "turn sideways" screen. */
+  rotateBlocked: boolean;
 
   newGame: () => void;
   continueGame: () => void;
@@ -117,6 +119,7 @@ export const useGame = create<GameState>()(
       toasts: [],
       levelUp: null,
       gamepad: false,
+      rotateBlocked: false,
 
       newGame: () => set({ ...fresh(), muted: get().muted, appearance: get().appearance, phase: "playing", panel: "customize", panelBack: null, firstCustomize: true }),
       continueGame: () => set({ phase: "playing", panel: null, panelBack: null }),
