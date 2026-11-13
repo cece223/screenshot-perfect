@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { FIXTURES, FIXTURE_CAPACITY, productById, productsForFixture, type FixtureId, type ItemShape } from "../sim/catalog";
 import { levelInfo, type Stock } from "../sim/economy";
-import { COUNTER, FIXTURE_LAYOUT, MIRROR, REGISTER } from "../sim/layout";
+import { COUNTER_D, COUNTER_W, FIXTURE_LAYOUT, MIRROR, REGISTERS, clampRegisters } from "../sim/layout";
 import { useGame } from "../store";
 import { labelTexture } from "./textures";
 import { Model } from "./Model";
@@ -234,30 +234,46 @@ export function DisplayCase({ fixture }: { fixture: FixtureId }) {
   );
 }
 
-export function Counter() {
+const FLUTES = Math.round(COUNTER_W / 0.225);
+
+/** Every checkout counter the shop owns. */
+export function Counters() {
+  const n = useGame((st) => clampRegisters(st.registers));
   return (
-    <group position={[COUNTER.x, 0, COUNTER.z]}>
+    <>
+      {REGISTERS.slice(0, n).map((_, reg) => (
+        <Counter key={reg} reg={reg} label={n > 1 ? `Checkout ${reg + 1}` : "Checkout"} />
+      ))}
+    </>
+  );
+}
+
+export function Counter({ reg = 0, label = "Checkout" }: { reg?: number; label?: string }) {
+  const at = REGISTERS[reg]!;
+  const half = COUNTER_W / 2;
+  return (
+    <group position={[at.x, 0, at.z]}>
       <mesh position={[0, 0.475, 0]} castShadow receiveShadow>
-        <boxGeometry args={[COUNTER.w, 0.95, COUNTER.d]} />
+        <boxGeometry args={[COUNTER_W, 0.95, COUNTER_D]} />
         <meshStandardMaterial color="#f6efe4" roughness={0.6} />
       </mesh>
       <mesh position={[0, 0.98, 0]} castShadow>
-        <boxGeometry args={[COUNTER.w + 0.1, 0.06, COUNTER.d + 0.1]} />
+        <boxGeometry args={[COUNTER_W + 0.1, 0.06, COUNTER_D + 0.1]} />
         <meshStandardMaterial color="#a7754c" roughness={0.45} />
       </mesh>
       {/* fluted front panel */}
-      {Array.from({ length: 13 }, (_, i) => (
-        <mesh key={i} position={[-1.35 + i * 0.225, 0.47, COUNTER.d / 2 + 0.01]}>
+      {Array.from({ length: FLUTES }, (_, i) => (
+        <mesh key={i} position={[-half + 0.11 + (i * (COUNTER_W - 0.22)) / Math.max(1, FLUTES - 1), 0.47, COUNTER_D / 2 + 0.01]}>
           <boxGeometry args={[0.1, 0.8, 0.02]} />
           <meshStandardMaterial color="#efc7bc" roughness={0.7} />
         </mesh>
       ))}
-      <Sign text="Checkout" position={[0, 0.62, COUNTER.d / 2 + 0.035]} w={1.2} h={0.3} bg="#2f2a2a" fg="#f0d27a" />
+      <Sign text={label} position={[0, 0.62, COUNTER_D / 2 + 0.035]} w={1.25} h={0.3} bg="#2f2a2a" fg="#f0d27a" />
       <Register />
-      <Model url={MODELS.plantSmall} scale={2.6} position={[1.2, 1.01, 0]} />
+      {reg === 0 && <Model url={MODELS.plantSmall} scale={2.6} position={[half - 0.25, 1.01, 0]} />}
       {/* bag stack */}
       {[0, 1, 2].map((i) => (
-        <mesh key={i} position={[-1.15, 1.03 + i * 0.03, 0.05]} rotation-y={i * 0.2}>
+        <mesh key={i} position={[half - (reg === 0 ? 0.7 : 0.3), 1.03 + i * 0.03, 0.05]} rotation-y={i * 0.2}>
           <boxGeometry args={[0.36, 0.025, 0.26]} />
           <meshStandardMaterial color="#e9a294" roughness={0.9} />
         </mesh>
@@ -268,7 +284,7 @@ export function Counter() {
 
 function Register() {
   return (
-    <group position={[REGISTER.x - COUNTER.x, 1.01, REGISTER.z - COUNTER.z]}>
+    <group position={[0, 1.01, 0]}>
       <mesh position={[0, 0.05, 0]} castShadow>
         <boxGeometry args={[0.46, 0.1, 0.38]} />
         <meshStandardMaterial color="#3a3d42" roughness={0.4} />
