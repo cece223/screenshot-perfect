@@ -1,9 +1,10 @@
 import { FIXTURES, FIXTURE_IDS, type FixtureId } from "./catalog";
-import { COUNTER, DESK, FIXTURE_LAYOUT, MIRROR, type InteractId, type Vec2 } from "./layout";
+import { COUNTER_D, COUNTER_W, DESK, FIXTURE_LAYOUT, MIRROR, REGISTERS, cashierSpot, clampRegisters, type InteractId, type Vec2 } from "./layout";
 
 /** What a tap / click in the 3D view landed on. Pure geometry: no three.js. */
 export type TapTarget =
-  | { kind: "interact"; id: InteractId }
+  | { kind: "interact"; id: InteractId; reg?: number }
+  | { kind: "staff"; reg: number }
   | { kind: "fixture"; id: FixtureId }
   | { kind: "customer"; id: number }
   | { kind: "floor"; point: Vec2 };
@@ -47,7 +48,6 @@ const flat = (x: number, z: number, w: number, d: number, h: number, pad = 0.08)
 });
 
 const STATIC: { target: TapTarget; box: Box3 }[] = [
-  { target: { kind: "interact", id: "register" }, box: flat(COUNTER.x, COUNTER.z, COUNTER.w, COUNTER.d, 1.35) },
   { target: { kind: "interact", id: "computer" }, box: flat(DESK.x, DESK.z, DESK.w, DESK.d, 1.45) },
   { target: { kind: "interact", id: "mirror" }, box: flat(MIRROR.x + 0.1, MIRROR.z, 0.45, 1.2, 2.1) },
   ...FIXTURE_IDS.map((id) => {
@@ -56,10 +56,31 @@ const STATIC: { target: TapTarget; box: Box3 }[] = [
   }),
 ];
 
-/** Nearest thing under the ray. Shoppers (generously sized) win over the floor. */
-export function pickTap(ray: Ray, customers: { id: number; x: number; z: number }[]): TapTarget | null {
+const COUNTER_BOXES = REGISTERS.map((r, reg) => ({
+  target: { kind: "interact", id: "register", reg } as TapTarget,
+  box: flat(r.x, r.z, COUNTER_W, COUNTER_D, 1.35),
+}));
+
+/**
+ * Nearest thing under the ray. Shoppers (generously sized) win over the floor.
+ * `registers` = counters the shop owns; `staffed` = registers with a cashier standing at them.
+ */
+export function pickTap(
+  ray: Ray,
+  customers: { id: number; x: number; z: number }[],
+  registers = 1,
+  staffed: number[] = [],
+): TapTarget | null {
   let best: TapTarget | null = null;
   let bestT = Infinity;
+  for (const reg of staffed) {
+    const s = cashierSpot(reg);
+    const t = rayBox(ray, flat(s.x, s.z, 0.6, 0.6, 1.9, 0.05));
+    if (t !== null && t < bestT) {
+      bestT = t;
+      best = { kind: "staff", reg };
+    }
+  }
   for (const c of customers) {
     const t = rayBox(ray, flat(c.x, c.z, 0.7, 0.7, 1.9, 0.05));
     if (t !== null && t < bestT) {
@@ -67,7 +88,7 @@ export function pickTap(ray: Ray, customers: { id: number; x: number; z: number 
       best = { kind: "customer", id: c.id };
     }
   }
-  for (const s of STATIC) {
+  for (const s of [...STATIC, ...COUNTER_BOXES.slice(0, clampRegisters(registers))]) {
     const t = rayBox(ray, s.box);
     if (t !== null && t < bestT) {
       bestT = t;
