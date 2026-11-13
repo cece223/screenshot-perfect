@@ -8,6 +8,7 @@ import { STARTING_CASH, levelInfo } from "../sim/economy";
 import { useGame } from "../store";
 import { resetWorld } from "../world";
 import { Sheet } from "./Sheet";
+import { lockLandscape } from "./landscape";
 
 /** "just now", "5 min ago", "2 h ago", or a date. */
 export function savedLabel(at: number | null, now = Date.now()): string {
@@ -47,6 +48,7 @@ export function TitleScreen() {
   };
   const go = (fn: () => void) => () => {
     unlockAudio();
+    lockLandscape();
     fn();
   };
   const btn = "menu-btn h-12 w-64 text-lg [@media(max-height:480px)]:h-10 [@media(max-height:480px)]:text-base";
@@ -214,6 +216,7 @@ export function HelpPanel() {
       <ol className="mb-5 list-decimal space-y-1.5 pl-5 text-sm">
         <li>Walk into the <b>office</b> (back right) and use the computer to order stock.</li>
         <li>Shoppers browse your racks, grab items and line up at the <b>register</b>.</li>
+        <li>Buy more <b>registers</b> and hire <b>cashiers</b> on the office computer (Staff &amp; Registers). Cashiers check out their own line, and you can still help at any register.</li>
         <li>Stand behind the counter and check them out for cash and XP.</li>
         <li>Level 5 unlocks accessories; level 10 unlocks store decor.</li>
         <li>Tap or click the floor to walk, and tap the register, computer, mirror, racks or shoppers to use or check them.</li>
