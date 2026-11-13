@@ -13,3 +13,6 @@
 - [x] Tap / click anything: floor to walk, register / computer / mirror to use, racks for stock info, shoppers for status
 - [x] Main menu redesign: Main Street Boutique art + Open your boutique / New boutique / Character / Settings & controls
 - [x] Menu artwork: modern, younger-crowd clothes on the rack (no vintage dresses/sun hats)
+- [ ] Landscape-only on phones/tablets (rotate prompt + orientation lock where supported), menu + HUD fit landscape phones
+- [ ] Buy extra registers (up to 3); shoppers line up at the shortest line
+- [ ] Hire cashiers (one per register); they check out shoppers on their own, player can still run any register
