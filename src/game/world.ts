@@ -240,6 +240,15 @@ export function handleTap(target: TapTarget): string {
     if (info) g.toast(info, "info");
     return `customer:${target.id}`;
   }
+  if (target.kind === "staff") {
+    const assign = staffAssignments(g.registers, g.staff.length);
+    const who = g.staff[assign[target.reg] ?? -1];
+    if (who) {
+      const busy = getWorld().sim.frontReady(target.reg);
+      g.toast(`${who.name} · cashier at register ${target.reg + 1}${busy ? " · ringing someone up" : ""}`, "info");
+    }
+    return `staff:${target.reg}`;
+  }
   walkTo(target.point);
   return "walk:floor";
 }

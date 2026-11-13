@@ -8,12 +8,13 @@ import { FIXTURE_IDS, FIXTURES } from "./sim/catalog";
 import { actionsForKey } from "./bindings";
 import { useSettings } from "./settings";
 import { pickTap, type TapTarget } from "./sim/taps";
+import { staffAssignments } from "./sim/staff";
 import { useGame } from "./store";
 import { advanceSim, checkoutFront, getWorld, handleTap } from "./world";
 import { Stepper, interact } from "./Stepper";
-import { Customers, InteractRings, Player, TapMarker } from "./scene/Actors";
+import { Cashiers, Customers, InteractRings, Player, TapMarker } from "./scene/Actors";
 import { Decor } from "./scene/Decor";
-import { Counter, DisplayCase, FittingArea, Mirror, Rack } from "./scene/Fixtures";
+import { Counters, DisplayCase, FittingArea, Mirror, Rack } from "./scene/Fixtures";
 import { MODELS } from "./scene/models";
 import { OfficeFurniture } from "./scene/Office";
 import { StoreShell } from "./scene/Store";
@@ -45,7 +46,8 @@ function tapAtScreen(clientX: number, clientY: number, canvas: HTMLCanvasElement
   if (!w.rayAt) return null;
   const r = canvas.getBoundingClientRect();
   const ray = w.rayAt(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-  const target = pickTap(ray, w.sim.customers);
+  const staffed = staffAssignments(g.registers, g.staff.length).flatMap((k, reg) => (k >= 0 ? [reg] : []));
+  const target = pickTap(ray, w.sim.customers, g.registers, staffed);
   return target ? handleTap(target) : null;
 }
 
@@ -82,8 +84,9 @@ function Scene() {
       <TapMarker />
       <Player />
       <Customers />
+      <Cashiers />
       <Suspense fallback={null}>
-        <Counter />
+        <Counters />
         <OfficeFurniture />
         <FittingArea />
         <Decor />
@@ -164,6 +167,9 @@ export default function Game() {
           stock: g.stock,
           prompt: g.prompt,
           queue: [...w.sim.queue],
+          queues: w.sim.queues.map((q) => [...q]),
+          registers: g.registers,
+          staff: g.staff.map((e) => e.name),
           player: { ...w.player },
           customers: w.sim.customers.map((c) => ({ id: c.id, phase: c.phase, mood: c.mood, x: +c.x.toFixed(2), z: +c.z.toFixed(2), items: c.items })),
         };
