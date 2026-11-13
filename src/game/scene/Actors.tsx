@@ -4,10 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { randomAppearance } from "../sim/appearance";
 import { QUEUE_PATIENCE, type Mood } from "../sim/customers";
-import { INTERACTABLES } from "../sim/layout";
+import { cashierSpot, interactablesFor } from "../sim/layout";
+import { staffAssignments, type Employee } from "../sim/staff";
 import { mulberry32 } from "../sim/rng";
 import { useGame } from "../store";
-import { getWorld } from "../world";
+import { cashierProgress, getWorld } from "../world";
 import { Character, type MotionSample } from "./Character";
 
 function lerpAngle(a: number, b: number, t: number) {
@@ -102,7 +103,10 @@ export function Customers() {
 /** Glowing floor rings mark the spots where you can interact. */
 export function InteractRings() {
   const prompt = useGame((s) => s.prompt);
-  const ready = useGame((s) => s.frontReady);
+  const promptReg = useGame((s) => s.promptReg);
+  const readyMask = useGame((s) => s.readyMask);
+  const registers = useGame((s) => s.registers);
+  const spots = useMemo(() => interactablesFor(registers), [registers]);
   const refs = useRef<(THREE.Mesh | null)[]>([]);
   useFrame(({ clock }) => {
     refs.current.forEach((m, i) => {
@@ -113,12 +117,13 @@ export function InteractRings() {
   });
   return (
     <>
-      {INTERACTABLES.map((it, i) => {
-        const active = prompt === it.id;
-        const alert = it.id === "register" && ready;
+      {spots.map((it, i) => {
+        const isReg = it.id === "register";
+        const active = prompt === it.id && (!isReg || promptReg === it.reg);
+        const alert = isReg && ((readyMask >> (it.reg ?? 0)) & 1) === 1;
         return (
           <mesh
-            key={it.id}
+            key={`${it.id}${it.reg ?? ""}`}
             ref={(m) => {
               refs.current[i] = m;
             }}
@@ -158,5 +163,49 @@ export function TapMarker() {
       <ringGeometry args={[0.16, 0.28, 32]} />
       <meshBasicMaterial color="#c9604f" transparent opacity={0.85} depthWrite={false} />
     </mesh>
+  );
+}
+
+const STAFF_SHIRT = "#3f6b5c";
+
+function CashierView({ who, reg }: { who: Employee; reg: number }) {
+  const bar = useRef<HTMLSpanElement>(null);
+  const sample = useRef<MotionSample>({ speed: 0, carrying: false });
+  const look = useMemo(() => {
+    const rand = mulberry32(who.seed);
+    const base = randomAppearance(rand, rand() < 0.5 ? "women" : "men");
+    return { ...base, top: "tee" as const, topColor: STAFF_SHIRT };
+  }, [who.seed]);
+  const at = cashierSpot(reg);
+  useFrame(() => {
+    if (bar.current) bar.current.style.width = `${cashierProgress(reg) * 100}%`;
+  });
+  return (
+    <group position={[at.x, 0, at.z]}>
+      <Character look={look} sample={() => sample.current} />
+      <Html position={[0, 2.2, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+        <div className="hud-glass flex select-none items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-foreground">
+          <span>🪪 {who.name}</span>
+          <span className="h-1.5 w-8 overflow-hidden rounded-full bg-muted">
+            <span ref={bar} className="block h-full w-0 rounded-full bg-primary" />
+          </span>
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+/** Hired cashiers standing at the registers they run. */
+export function Cashiers() {
+  const staff = useGame((s) => s.staff);
+  const registers = useGame((s) => s.registers);
+  const assign = staffAssignments(registers, staff.length);
+  return (
+    <>
+      {assign.map((k, reg) => {
+        const who = k >= 0 ? staff[k] : undefined;
+        return who ? <CashierView key={`${who.id}-${reg}`} who={who} reg={reg} /> : null;
+      })}
+    </>
   );
 }
