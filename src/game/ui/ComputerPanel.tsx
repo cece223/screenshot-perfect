@@ -1,4 +1,4 @@
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Lock, Sparkles, Store, UserPlus } from "lucide-react";
 import { useState } from "react";
 import {
   DECOR,
@@ -11,17 +11,20 @@ import {
   type StyleOption,
 } from "../sim/catalog";
 import { ORDER_SIZES, fixtureStock, levelInfo } from "../sim/economy";
+import { MAX_REGISTERS } from "../sim/layout";
+import { CASHIER_SECONDS, EMPLOYEE_COST, REGISTER_PRICES, canHire, staffAssignments } from "../sim/staff";
 import { useGame } from "../store";
 import { ProductIcon } from "./ProductIcon";
 import { Sheet } from "./Sheet";
 
-type Tab = "women" | "men" | "accessories" | "decor" | "style";
+type Tab = "women" | "men" | "accessories" | "decor" | "style" | "staff";
 const TABS: { id: Tab; label: string; level: number }[] = [
   { id: "women", label: "Women", level: 1 },
   { id: "men", label: "Men", level: 1 },
   { id: "accessories", label: "Accessories", level: LEVEL_ACCESSORIES },
   { id: "decor", label: "Decor", level: LEVEL_DECOR },
   { id: "style", label: "Walls & Floors", level: 1 },
+  { id: "staff", label: "Staff & Registers", level: 1 },
 ];
 
 function LockedNote({ level }: { level: number }) {
@@ -168,6 +171,93 @@ function DecorGrid() {
   );
 }
 
+function StaffTab() {
+  const cash = useGame((s) => s.cash);
+  const registers = useGame((s) => s.registers);
+  const staff = useGame((s) => s.staff);
+  const buyRegister = useGame((s) => s.buyRegister);
+  const hire = useGame((s) => s.hireEmployee);
+  const assign = staffAssignments(registers, staff.length);
+  const hireOk = canHire(staff.length, registers);
+  return (
+    <div className="space-y-5">
+      <section>
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Registers</h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {Array.from({ length: MAX_REGISTERS }, (_, i) => {
+            const owned = i < registers;
+            const next = i === registers;
+            const price = REGISTER_PRICES[i]!;
+            const k = assign[i] ?? -1;
+            const who = owned && k >= 0 ? staff[k]?.name : undefined;
+            return (
+              <div key={i} className="flex flex-col gap-2 rounded-2xl border border-border bg-background p-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground/70">
+                    <Store className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold">Register {i + 1}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {owned ? (who ? `Run by ${who}` : "Run by you") : next ? "A new counter and line" : `Buy register ${i} first`}
+                    </div>
+                  </div>
+                </div>
+                {owned ? (
+                  <div className="inline-flex items-center gap-1 text-xs font-bold text-accent-foreground">
+                    <Check className="h-3 w-3" /> Open
+                  </div>
+                ) : (
+                  <button disabled={!next || cash < price} onClick={() => buyRegister()} className="btn-game btn-primary h-10 text-sm">
+                    {next ? `Buy · $${price}` : <Lock className="h-4 w-4" />}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section>
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Your team</h3>
+        <p className="mb-3 text-sm text-muted-foreground">
+          A cashier checks out the shoppers in their line by themselves, about {CASHIER_SECONDS} seconds each. You can still check out at any
+          register, even one a cashier is running. Each cashier needs their own register.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {staff.map((e, k) => {
+            const reg = assign.indexOf(k);
+            return (
+              <div key={e.id} className="flex items-center gap-3 rounded-2xl border border-border bg-background p-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-lg font-bold text-secondary-foreground">
+                  {e.name[0]}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold">{e.name}</div>
+                  <div className="text-xs text-muted-foreground">Cashier · register {reg + 1}</div>
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-background p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground/70">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-bold">Hire a cashier</div>
+              <div className="text-xs text-muted-foreground">
+                {hireOk ? "One-time hiring fee" : registers < MAX_REGISTERS ? "Buy another register to hire more" : "Every register has a cashier"}
+              </div>
+            </div>
+            <button disabled={!hireOk || cash < EMPLOYEE_COST} onClick={() => hire()} className="btn-game btn-primary h-10 shrink-0 px-4 text-sm">
+              ${EMPLOYEE_COST}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function ComputerPanel() {
   const close = useGame((s) => s.closePanel);
   const cash = useGame((s) => s.cash);
@@ -181,7 +271,7 @@ export function ComputerPanel() {
       title="Main Street Supply"
       subtitle={
         <span>
-          Wholesale orders go straight onto your racks · Balance <b className="text-foreground">${cash.toLocaleString()}</b>
+          Stock, staff and store upgrades · Balance <b className="text-foreground">${cash.toLocaleString()}</b>
         </span>
       }
       onClose={close}
@@ -204,6 +294,8 @@ export function ComputerPanel() {
         <ProductGrid filter={(p) => p.unlockLevel === LEVEL_ACCESSORIES} />
       ) : tab === "decor" ? (
         <DecorGrid />
+      ) : tab === "staff" ? (
+        <StaffTab />
       ) : (
         <div className="space-y-5">
           <section>
