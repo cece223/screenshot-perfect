@@ -9,7 +9,8 @@ import { unlockAudio } from "../audio";
 import { useCoarsePointer } from "./useCoarsePointer";
 
 const PROMPTS = {
-  register: (ready: boolean, q: number) => (ready ? "Check out customer" : q ? "Customer on the way…" : "Register · no one in line"),
+  register: (ready: boolean, q: number, name: string) =>
+    ready ? `Check out customer${name ? ` · ${name.toLowerCase()}` : ""}` : q ? "Customer on the way…" : `${name || "Register"} · no one in line`,
   computer: () => "Use office computer",
   mirror: () => "Change your look",
 };
@@ -20,6 +21,9 @@ export function Hud() {
   const queue = useGame((s) => s.queueLength);
   const ready = useGame((s) => s.frontReady);
   const prompt = useGame((s) => s.prompt);
+  const promptReg = useGame((s) => s.promptReg);
+  const readyMask = useGame((s) => s.readyMask);
+  const registers = useGame((s) => s.registers);
   const muted = useGame((s) => s.muted);
   const gamepad = useGame((s) => s.gamepad);
   const toasts = useGame((s) => s.toasts);
@@ -44,7 +48,15 @@ export function Hud() {
   const { level, into, needed } = levelInfo(xp);
 
   const label =
-    prompt === "register" ? PROMPTS.register(ready, queue) : prompt ? PROMPTS[prompt]() : null;
+    prompt === "register"
+      ? PROMPTS.register(
+          promptReg !== null && ((readyMask >> promptReg) & 1) === 1,
+          queue,
+          registers > 1 && promptReg !== null ? `Register ${promptReg + 1}` : "",
+        )
+      : prompt
+        ? PROMPTS[prompt]()
+        : null;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex flex-col">

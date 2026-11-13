@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COUNTER, OBSTACLES, PLAYER_START } from "./layout";
+import { COUNTER, OBSTACLES, PLAYER_START, REGISTERS, obstaclesFor } from "./layout";
 import { findPlayerPath, isWalkable } from "./pathfind";
 import { pickTap, type Ray } from "./taps";
 
@@ -7,7 +7,7 @@ const down = (x: number, z: number): Ray => ({ origin: { x, y: 10, z }, dir: { x
 
 describe("tapping the 3D view", () => {
   it("tapping the counter targets the register, the rack targets the rack", () => {
-    expect(pickTap(down(COUNTER.x, COUNTER.z), [])).toEqual({ kind: "interact", id: "register" });
+    expect(pickTap(down(COUNTER.x, COUNTER.z), [])).toEqual({ kind: "interact", id: "register", reg: 0 });
     expect(pickTap(down(-6, -5), [])).toEqual({ kind: "fixture", id: "wTops" });
     expect(pickTap(down(8.4, -7.25), [])).toEqual({ kind: "interact", id: "computer" });
   });
@@ -33,5 +33,21 @@ describe("tapping the 3D view", () => {
   it("walking behind the counter to the register works", () => {
     const path = findPlayerPath({ x: -6, z: 6 }, { x: 6, z: 1 });
     expect(path.length).toBeGreaterThan(0);
+  });
+
+  it("extra registers are tappable only once bought, and a cashier can be tapped", () => {
+    const r3 = REGISTERS[2]!;
+    expect(pickTap(down(r3.x, r3.z), [], 1)?.kind).toBe("floor");
+    expect(pickTap(down(r3.x, r3.z), [], 3)).toEqual({ kind: "interact", id: "register", reg: 2 });
+    expect(pickTap(down(r3.x - 0.68, 1.15), [], 3, [2])).toEqual({ kind: "staff", reg: 2 });
+  });
+
+  it("the player can walk behind every bought counter", () => {
+    for (const r of REGISTERS) {
+      const path = findPlayerPath({ x: -6, z: 6 }, { x: r.x, z: 1 }, obstaclesFor(3));
+      expect(path.length).toBeGreaterThan(0);
+      const last = path[path.length - 1]!;
+      expect(Math.hypot(last.x - r.x, last.z - 1)).toBeLessThan(0.3);
+    }
   });
 });

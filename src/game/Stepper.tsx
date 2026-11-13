@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { isKeyDown } from "./bindings";
 import { cameraRelativeMove, gamepadMenuNav, input, keysToAxes, pollGamepad } from "./input";
 import { resolveCollisions } from "./sim/collision";
-import { INTERACTABLES, interactableAt, PLAYER_RADIUS, STORE } from "./sim/layout";
+import { interactableAt, nearestRegister, obstaclesFor, PLAYER_RADIUS, STORE } from "./sim/layout";
 import { useSettings } from "./settings";
 import { useGame } from "./store";
 import { advanceSim, arrive, cancelWalk, getWorld, interact } from "./world";
@@ -60,7 +60,8 @@ export function Stepper() {
     const cfg = useSettings.getState();
     const w = getWorld();
     const p = w.player;
-    const menuOpen = g.phase !== "playing" || !!g.panel || !!g.levelUp;
+    // menus, level-up pop-ups and the "turn your phone sideways" screen all freeze the shop
+    const menuOpen = g.phase !== "playing" || !!g.panel || !!g.levelUp || g.rotateBlocked;
 
     // --- gamepad
     const pad = pollGamepad();
@@ -108,8 +109,7 @@ export function Stepper() {
       const dx = wp.x - p.x;
       const dz = wp.z - p.z;
       const d = Math.hypot(dx, dz);
-      const target = p.then ? INTERACTABLES.find((i) => i.id === p.then) : undefined;
-      const closeEnough = last && target && interactableAt(p) === target.id && d < 0.5;
+      const closeEnough = last && !!p.then && interactableAt(p, g.registers) === p.then && d < 0.5;
       if (d < (last ? WALK_ARRIVE : WALK_WAYPOINT) || closeEnough) {
         p.route.shift();
         if (!p.route.length) arrive();
@@ -124,7 +124,7 @@ export function Stepper() {
     const a = 1 - Math.exp(-ACCEL * dt);
     p.vx += (mv.x * MOVE_SPEED - p.vx) * a;
     p.vz += (mv.z * MOVE_SPEED - p.vz) * a;
-    const next = resolveCollisions({ x: p.x + p.vx * dt, z: p.z + p.vz * dt }, PLAYER_RADIUS);
+    const next = resolveCollisions({ x: p.x + p.vx * dt, z: p.z + p.vz * dt }, PLAYER_RADIUS, obstaclesFor(g.registers));
     p.speed = dt > 0 ? Math.hypot(next.x - p.x, next.z - p.z) / dt : 0;
     p.x = next.x;
     p.z = next.z;
@@ -144,8 +144,9 @@ export function Stepper() {
     input.camZoomDelta = 0;
 
     // --- interactions
-    const near = g.phase === "playing" ? interactableAt(p) : null;
-    if (near !== g.prompt) useGame.setState({ prompt: near });
+    const near = g.phase === "playing" ? interactableAt(p, g.registers) : null;
+    const nearReg = near === "register" ? nearestRegister(p, g.registers) : null;
+    if (near !== g.prompt || nearReg !== g.promptReg) useGame.setState({ prompt: near, promptReg: nearReg });
     if (input.interactQueued) {
       input.interactQueued = false;
       if (!menuOpen && near) {
