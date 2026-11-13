@@ -2,7 +2,7 @@ import { FIXTURE_CAPACITY, FIXTURES, PRODUCTS, type FixtureId } from "./sim/cata
 import { CustomerSim, type StockPort } from "./sim/customers";
 import { fixtureStock, levelInfo, restoreItems, storeAppeal, takeFromFixture } from "./sim/economy";
 import { FIXTURE_LAYOUT, INTERACTABLES, PLAYER_START, interactableAt, nearestRegister, obstaclesFor, registerSpot, type InteractId, type Vec2 } from "./sim/layout";
-import { staffAssignments, stepCashiers } from "./sim/staff";
+import { CASHIER_SECONDS, staffAssignments, stepCashiers } from "./sim/staff";
 import { findPlayerPath } from "./sim/pathfind";
 import type { Ray, TapTarget } from "./sim/taps";
 import { useGame } from "./store";
@@ -106,7 +106,7 @@ export function advanceSim(dt: number) {
 
 /** Cashier progress (0–1) at a register, for the scene. */
 export function cashierProgress(reg: number): number {
-  return Math.min(1, (getWorld().cashierTimers[reg] ?? 0) / 4);
+  return Math.min(1, (getWorld().cashierTimers[reg] ?? 0) / CASHIER_SECONDS);
 }
 
 export function checkoutFront(reg = 0): boolean {
